@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Phone, MapPin, Wallet, History, User, Menu, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,8 +19,12 @@ const Index = () => {
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
-                  <span className="text-black font-bold text-lg">T</span>
+                <div className="w-10 h-10 flex items-center justify-center">
+                  <img 
+                    src="https://cmsprod.taxiye.com/uploads/taxiye_logo_main_09d8b73c2f.svg" 
+                    alt="Taxiye" 
+                    className="w-10 h-10"
+                  />
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-white">Hello, John!</h1>
