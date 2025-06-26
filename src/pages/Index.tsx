@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { SecureErrorBoundary } from '@/components/SecureErrorBoundary';
@@ -7,7 +7,7 @@ import AuthPage from '@/components/AuthPage';
 import HomeHeader from '@/components/home/HomeHeader';
 import HomeContent from '@/components/home/HomeContent';
 import WalletContent from '@/components/wallet/WalletContent';
-import TripsContent from '@/components/TripsContent';
+import TripsContent from '@/components/trips/TripsContent';
 import ProfileContent from '@/components/profile/ProfileContent';
 import BottomNavigation from '@/components/BottomNavigation';
 import PaymentSelector from '@/components/payment/PaymentSelector';
@@ -30,7 +30,6 @@ const Index = () => {
   const [isRideInProgress, setIsRideInProgress] = useState(false);
   const [rideProgress, setRideProgress] = useState(0);
   const [rideData, setRideData] = useState<any>(null);
-  const router = useRouter();
   const [currentPage, setCurrentPage] = useState('home');
 
   useEffect(() => {
@@ -71,7 +70,7 @@ const Index = () => {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    router.push('/auth');
+    setCurrentPage('home');
   };
 
   const handleRideStart = (rideInfo: any) => {
@@ -195,7 +194,7 @@ const Index = () => {
       case 'wallet':
         return <WalletContent />;
       case 'trips':
-        return <TripsContent onTripHistoryClick={() => setCurrentPage('trip-history')} />;
+        return <TripsContent onViewTripHistory={() => setCurrentPage('trip-history')} />;
       case 'profile':
         return (
           <ProfileContent 
