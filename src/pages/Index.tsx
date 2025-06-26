@@ -25,6 +25,16 @@ const Index = () => {
   const [selectedVehicle, setSelectedVehicle] = useState('mini');
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  
+  // Ride state
+  const [isRideInProgress, setIsRideInProgress] = useState(false);
+  const [rideProgress, setRideProgress] = useState(0);
+  const [rideData, setRideData] = useState<{
+    vehicleType: string;
+    driverName: string;
+    estimatedTime: number;
+  } | null>(null);
+  
   const { toast } = useToast();
   
   // Initialize Google Maps
@@ -105,6 +115,33 @@ const Index = () => {
     }
   };
 
+  const handleRideStart = (rideInfo: {
+    vehicleType: string;
+    driverName: string;
+    estimatedTime: number;
+  }) => {
+    setIsRideInProgress(true);
+    setRideData(rideInfo);
+    setRideProgress(0);
+    
+    // Simulate ride progress
+    const progressInterval = setInterval(() => {
+      setRideProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(progressInterval);
+          setIsRideInProgress(false);
+          setRideData(null);
+          toast({
+            title: "Ride Completed!",
+            description: "Thank you for riding with Taxiye. Rate your trip!",
+          });
+          return 0;
+        }
+        return prev + 2; // Increase by 2% every interval
+      });
+    }, 1000); // Update every second
+  };
+
   // Show specific pages
   if (currentPage === 'auth') {
     return <AuthPage onBack={() => setCurrentPage(null)} />;
@@ -139,9 +176,11 @@ const Index = () => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-white">
-                    Hello, {session ? userProfile?.name || 'User' : 'Guest'}!
+                    {isRideInProgress ? 'Ride in Progress' : `Hello, ${session ? userProfile?.name || 'User' : 'Guest'}!`}
                   </h1>
-                  <p className="text-gray-400 text-sm">Where to today?</p>
+                  <p className="text-gray-400 text-sm">
+                    {isRideInProgress ? 'Enjoy your ride' : 'Where to today?'}
+                  </p>
                 </div>
               </div>
               <Button variant="ghost" size="sm" className="text-gray-400">
@@ -157,25 +196,35 @@ const Index = () => {
               onDropoffChange={setDropoff}
               activeInput={activeInput}
               onActiveInputChange={setActiveInput}
+              isRideInProgress={isRideInProgress}
+              rideProgress={rideProgress}
+              estimatedTime={rideData?.estimatedTime}
+              driverName={rideData?.driverName}
+              vehicleType={rideData?.vehicleType}
             />
 
-            {/* Compact Location Selection */}
-            <LocationSelector
-              pickup={pickup}
-              dropoff={dropoff}
-              onPickupChange={setPickup}
-              onDropoffChange={setDropoff}
-              activeInput={activeInput}
-              onActiveInputChange={setActiveInput}
-            />
+            {/* Location Selection - Only show when ride is not in progress */}
+            {!isRideInProgress && (
+              <LocationSelector
+                pickup={pickup}
+                dropoff={dropoff}
+                onPickupChange={setPickup}
+                onDropoffChange={setDropoff}
+                activeInput={activeInput}
+                onActiveInputChange={setActiveInput}
+              />
+            )}
 
-            {/* Vehicle Selection with Ride Request */}
-            <VehicleSelector
-              selectedVehicle={selectedVehicle}
-              onVehicleChange={setSelectedVehicle}
-              pickup={pickup}
-              dropoff={dropoff}
-            />
+            {/* Vehicle Selection - Only show when ride is not in progress */}
+            {!isRideInProgress && (
+              <VehicleSelector
+                selectedVehicle={selectedVehicle}
+                onVehicleChange={setSelectedVehicle}
+                pickup={pickup}
+                dropoff={dropoff}
+                onRideStart={handleRideStart}
+              />
+            )}
           </div>
         );
       case 'wallet':

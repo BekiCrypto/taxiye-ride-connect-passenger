@@ -1,8 +1,10 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Navigation, ArrowUpDown } from 'lucide-react';
+import { Navigation, ArrowUpDown, Clock, Navigation2 } from 'lucide-react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
+import { Progress } from '@/components/ui/progress';
 
 interface MapViewProps {
   pickup: string;
@@ -11,6 +13,11 @@ interface MapViewProps {
   onDropoffChange: (value: string) => void;
   activeInput: 'pickup' | 'dropoff';
   onActiveInputChange: (input: 'pickup' | 'dropoff') => void;
+  isRideInProgress?: boolean;
+  rideProgress?: number;
+  estimatedTime?: number;
+  driverName?: string;
+  vehicleType?: string;
 }
 
 const MapView: React.FC<MapViewProps> = ({
@@ -19,7 +26,12 @@ const MapView: React.FC<MapViewProps> = ({
   onPickupChange,
   onDropoffChange,
   activeInput,
-  onActiveInputChange
+  onActiveInputChange,
+  isRideInProgress = false,
+  rideProgress = 0,
+  estimatedTime = 0,
+  driverName = '',
+  vehicleType = ''
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -250,52 +262,101 @@ const MapView: React.FC<MapViewProps> = ({
   return (
     <Card className="bg-gray-800 border-gray-700 overflow-hidden">
       <div className="relative">
-        <div ref={mapRef} className="w-full h-64" />
+        <div ref={mapRef} className={`w-full ${isRideInProgress ? 'h-96' : 'h-64'}`} />
         
-        {/* Map Controls Overlay */}
-        <div className="absolute top-4 left-4 flex flex-col space-y-2">
-          {/* Toggle Active Input */}
-          <Button
-            size="sm"
-            onClick={handleToggleInput}
-            className={`${
-              activeInput === 'pickup' 
-                ? 'bg-green-500 hover:bg-green-600 text-white' 
-                : 'bg-red-500 hover:bg-red-600 text-white'
-            }`}
-          >
-            <div className={`w-2 h-2 rounded-full mr-2 ${
-              activeInput === 'pickup' ? 'bg-white' : 'bg-white'
-            }`} />
-            {activeInput === 'pickup' ? 'Set Pickup' : 'Set Destination'}
-          </Button>
+        {/* Ride Progress Overlay */}
+        {isRideInProgress && (
+          <div className="absolute top-4 left-4 right-4 bg-black/80 backdrop-blur-sm text-white p-4 rounded-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
+                  <Navigation2 className="w-5 h-5 text-black" />
+                </div>
+                <div>
+                  <p className="font-semibold">{driverName || 'Your Driver'}</p>
+                  <p className="text-sm text-gray-300">{vehicleType}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-300">ETA</p>
+                <p className="font-bold text-yellow-500 flex items-center">
+                  <Clock className="w-4 h-4 mr-1" />
+                  {estimatedTime} min
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Trip Progress</span>
+                <span>{Math.round(rideProgress)}%</span>
+              </div>
+              <Progress value={rideProgress} className="h-2" />
+            </div>
+            
+            <div className="space-y-1 text-sm">
+              <div className="flex items-center text-green-400">
+                <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                <span className="truncate">{pickup}</span>
+              </div>
+              <div className="flex items-center text-red-400">
+                <div className="w-2 h-2 bg-red-400 rounded-full mr-2"></div>
+                <span className="truncate">{dropoff}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
-          {/* Swap Locations */}
-          {pickup && dropoff && (
-            <Button
-              size="sm"
-              onClick={handleSwapLocations}
-              className="bg-gray-700 hover:bg-gray-600 text-white"
-            >
-              <ArrowUpDown className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
+        {/* Map Controls Overlay - Only show when ride is not in progress */}
+        {!isRideInProgress && (
+          <>
+            <div className="absolute top-4 left-4 flex flex-col space-y-2">
+              {/* Toggle Active Input */}
+              <Button
+                size="sm"
+                onClick={handleToggleInput}
+                className={`${
+                  activeInput === 'pickup' 
+                    ? 'bg-green-500 hover:bg-green-600 text-white' 
+                    : 'bg-red-500 hover:bg-red-600 text-white'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full mr-2 ${
+                  activeInput === 'pickup' ? 'bg-white' : 'bg-white'
+                }`} />
+                {activeInput === 'pickup' ? 'Set Pickup' : 'Set Destination'}
+              </Button>
+
+              {/* Swap Locations */}
+              {pickup && dropoff && (
+                <Button
+                  size="sm"
+                  onClick={handleSwapLocations}
+                  className="bg-gray-700 hover:bg-gray-600 text-white"
+                >
+                  <ArrowUpDown className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* Instructions */}
+            <div className="absolute bottom-4 left-4 bg-black/70 text-white text-xs px-2 py-1 rounded">
+              Tap map to set {activeInput === 'pickup' ? 'pickup' : 'destination'}
+            </div>
+          </>
+        )}
 
         {/* Current Location Button */}
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={handleCurrentLocation}
-          className="absolute bottom-4 right-4 bg-gray-700 hover:bg-gray-600 text-yellow-500"
-        >
-          <Navigation className="w-4 h-4" />
-        </Button>
-
-        {/* Instructions */}
-        <div className="absolute bottom-4 left-4 bg-black/70 text-white text-xs px-2 py-1 rounded">
-          Tap map to set {activeInput === 'pickup' ? 'pickup' : 'destination'}
-        </div>
+        {!isRideInProgress && (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={handleCurrentLocation}
+            className="absolute bottom-4 right-4 bg-gray-700 hover:bg-gray-600 text-yellow-500"
+          >
+            <Navigation className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </Card>
   );

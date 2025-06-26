@@ -19,6 +19,11 @@ interface VehicleSelectorProps {
   onVehicleChange: (vehicleId: string) => void;
   pickup?: string;
   dropoff?: string;
+  onRideStart?: (rideData: {
+    vehicleType: string;
+    driverName: string;
+    estimatedTime: number;
+  }) => void;
 }
 
 const vehicleTypes: VehicleType[] = [
@@ -52,7 +57,8 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   selectedVehicle,
   onVehicleChange,
   pickup,
-  dropoff
+  dropoff,
+  onRideStart
 }) => {
   const { toast } = useToast();
   const [isRequesting, setIsRequesting] = React.useState(false);
@@ -82,9 +88,20 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       
       const selectedRide = vehicleTypes.find(r => r.id === selectedVehicle);
       toast({
-        title: "Ride Requested!",
-        description: `Your ${selectedRide?.name} has been requested. Looking for nearby drivers...`,
+        title: "Driver Found!",
+        description: `Your ${selectedRide?.name} driver is on the way. Starting your ride...`,
       });
+      
+      // Simulate ride start after 2 seconds
+      setTimeout(() => {
+        if (onRideStart) {
+          onRideStart({
+            vehicleType: selectedRide?.name || 'Taxiye',
+            driverName: 'Ahmed Ali',
+            estimatedTime: 12
+          });
+        }
+      }, 2000);
       
       console.log('Ride requested:', {
         pickup,
