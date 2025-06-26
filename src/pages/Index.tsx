@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, MapPin, Wallet, History, User, Menu, Bell } from 'lucide-react';
+import { Phone, MapPin, Wallet, History, User, Menu, Bell, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -21,6 +21,8 @@ import PaymentSelector from '@/components/payment/PaymentSelector';
 import TelebirrTopUp from '@/components/wallet/TelebirrTopUp';
 import BankTransferTopUp from '@/components/wallet/BankTransferTopUp';
 import CardPaymentTopUp from '@/components/wallet/CardPaymentTopUp';
+import ReferralEarnCard from '@/components/referral/ReferralEarnCard';
+import CouponManager from '@/components/referral/CouponManager';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -184,6 +186,7 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
+        
         return (
           <div className="space-y-4">
             {/* Header */}
@@ -260,6 +263,7 @@ const Index = () => {
           </div>
         );
       case 'wallet':
+        
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-white mb-6">Wallet</h2>
@@ -336,6 +340,7 @@ const Index = () => {
           </div>
         );
       case 'trips':
+        
         return (
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
@@ -387,6 +392,26 @@ const Index = () => {
                 )}
               </CardContent>
             </Card>
+
+            {session && (
+              <div className="space-y-3">
+                {/* Referral & Earn Section with Accordion */}
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="referral-earn" className="border-gray-700">
+                    <AccordionTrigger className="text-white hover:text-yellow-500 hover:no-underline">
+                      <div className="flex items-center space-x-3">
+                        <Gift className="w-5 h-5" />
+                        <span>Refer & Earn</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <ReferralEarnCard />
+                      <CouponManager />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            )}
 
             {/* Profile Options */}
             <div className="space-y-3">
@@ -447,6 +472,7 @@ const Index = () => {
     }
   };
 
+  
   return (
     <div className="min-h-screen bg-gray-900">
       <div className="max-w-md mx-auto bg-gray-900 min-h-screen">
