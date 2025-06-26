@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 
 interface SupportOptionsProps {
   onShowFAQ: () => void;
+  onShowWhatsApp: () => void;
+  onShowTelegram: () => void;
 }
 
-const SupportOptions = ({ onShowFAQ }: SupportOptionsProps) => {
+const SupportOptions = ({ onShowFAQ, onShowWhatsApp, onShowTelegram }: SupportOptionsProps) => {
   const supportOptions = [
     {
       icon: Phone,
@@ -25,13 +27,13 @@ const SupportOptions = ({ onShowFAQ }: SupportOptionsProps) => {
       icon: MessageCircle,
       title: 'WhatsApp ChatBot',
       description: 'Chat with our AI assistant - 6055',
-      action: () => window.open('https://wa.me/6055')
+      action: onShowWhatsApp
     },
     {
       icon: MessageCircle,
       title: 'Telegram ChatBot',
       description: 'Chat with our AI assistant - 6055',
-      action: () => window.open('https://t.me/6055')
+      action: onShowTelegram
     }
   ];
 

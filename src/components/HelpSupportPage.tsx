@@ -5,12 +5,18 @@ import { Button } from '@/components/ui/button';
 import FAQPage from './FAQPage';
 import SupportOptions from './SupportOptions';
 import SupportTicketForm from './SupportTicketForm';
+import ChatBotPage from './ChatBotPage';
 
 const HelpSupportPage = ({ onBack }: { onBack: () => void }) => {
   const [showFAQ, setShowFAQ] = useState(false);
+  const [showChatBot, setShowChatBot] = useState<'whatsapp' | 'telegram' | null>(null);
 
   if (showFAQ) {
     return <FAQPage onBack={() => setShowFAQ(false)} />;
+  }
+
+  if (showChatBot) {
+    return <ChatBotPage onBack={() => setShowChatBot(null)} platform={showChatBot} />;
   }
 
   return (
@@ -28,7 +34,11 @@ const HelpSupportPage = ({ onBack }: { onBack: () => void }) => {
           <h1 className="text-xl font-bold text-white">Help & Support</h1>
         </div>
 
-        <SupportOptions onShowFAQ={() => setShowFAQ(true)} />
+        <SupportOptions 
+          onShowFAQ={() => setShowFAQ(true)}
+          onShowWhatsApp={() => setShowChatBot('whatsapp')}
+          onShowTelegram={() => setShowChatBot('telegram')}
+        />
         
         <SupportTicketForm />
       </div>
