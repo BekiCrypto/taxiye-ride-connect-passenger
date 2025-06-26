@@ -61,7 +61,8 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
               emailRedirectTo: `${window.location.origin}/`,
               data: {
                 name: formData.name,
-                email: formData.email
+                email: formData.email,
+                user_type: 'passenger' // Default to passenger for regular signups
               }
             }
           });

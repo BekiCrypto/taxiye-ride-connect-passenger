@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,10 +19,25 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
     const loadUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Try to get passenger profile first, then driver profile
+        const { data: passengerData } = await supabase
+          .from('passengers')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        const { data: driverData } = await supabase
+          .from('drivers')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        const profileData = passengerData || driverData;
+        
         setFormData({
-          name: user.user_metadata?.name || '',
+          name: profileData?.name || user.user_metadata?.name || '',
           email: user.email || '',
-          phone: user.phone || ''
+          phone: profileData?.phone || user.phone || ''
         });
       }
     };
@@ -33,13 +47,49 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
   const handleSaveProfile = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
+      // Update auth user metadata
+      const { error: authError } = await supabase.auth.updateUser({
         data: {
           name: formData.name
         }
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
+
+      // Update passenger profile if exists
+      const { data: passengerData } = await supabase
+        .from('passengers')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (passengerData) {
+        const { error: passengerError } = await supabase
+          .from('passengers')
+          .update({ name: formData.name })
+          .eq('user_id', user.id);
+
+        if (passengerError) throw passengerError;
+      }
+
+      // Update driver profile if exists
+      const { data: driverData } = await supabase
+        .from('drivers')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (driverData) {
+        const { error: driverError } = await supabase
+          .from('drivers')
+          .update({ name: formData.name })
+          .eq('user_id', user.id);
+
+        if (driverError) throw driverError;
+      }
 
       toast({
         title: "Profile Updated",

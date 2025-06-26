@@ -133,6 +133,36 @@ export type Database = {
           },
         ]
       }
+      passengers: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       promo_codes: {
         Row: {
           code: string
@@ -216,6 +246,7 @@ export type Database = {
           fare: number | null
           id: string
           net_earnings: number | null
+          passenger_id: string | null
           passenger_name: string | null
           passenger_phone: string | null
           pickup_location: string
@@ -232,6 +263,7 @@ export type Database = {
           fare?: number | null
           id?: string
           net_earnings?: number | null
+          passenger_id?: string | null
           passenger_name?: string | null
           passenger_phone?: string | null
           pickup_location: string
@@ -248,6 +280,7 @@ export type Database = {
           fare?: number | null
           id?: string
           net_earnings?: number | null
+          passenger_id?: string | null
           passenger_name?: string | null
           passenger_phone?: string | null
           pickup_location?: string
@@ -260,6 +293,13 @@ export type Database = {
             columns: ["driver_id"]
             isOneToOne: false
             referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rides_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "passengers"
             referencedColumns: ["id"]
           },
         ]
