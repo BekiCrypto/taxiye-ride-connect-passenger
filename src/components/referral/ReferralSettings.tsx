@@ -22,7 +22,7 @@ export interface ReferralConfig {
 // Default configuration - can be easily modified by marketing team
 export const defaultReferralConfig: ReferralConfig = {
   referrerBonus: 25,
-  referreeBonus: 25,
+  refereeBonus: 25,
   minimumRidesForBonus: 1,
   couponTypes: {
     walletTopup: {
@@ -49,7 +49,7 @@ export const defaultReferralConfig: ReferralConfig = {
 export const getFormattedMessage = (template: string, config: ReferralConfig, code?: string) => {
   return template
     .replace('{code}', code || 'YOUR_CODE')
-    .replace('{bonus}', config.referreeBonus.toString())
-    .replace('{refereeBonus}', config.referreeBonus.toString())
+    .replace('{bonus}', config.refereeBonus.toString())
+    .replace('{refereeBonus}', config.refereeBonus.toString())
     .replace('{referrerBonus}', config.referrerBonus.toString());
 };
