@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin } from 'lucide-react';
+import { MapPin, Building2, Home } from 'lucide-react';
 import { getGoogleMapsService, PlaceAutocomplete, PlaceDetails } from '@/services/googleMapsService';
 
 interface AddressAutocompleteProps {
@@ -73,6 +73,16 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     }
   };
 
+  const getPlaceIcon = (types: string[]) => {
+    if (types.some(type => ['establishment', 'point_of_interest', 'store', 'restaurant'].includes(type))) {
+      return <Building2 className="w-4 h-4 text-blue-500" />;
+    }
+    if (types.some(type => ['street_address', 'premise'].includes(type))) {
+      return <Home className="w-4 h-4 text-green-500" />;
+    }
+    return <MapPin className="w-4 h-4 text-yellow-500" />;
+  };
+
   return (
     <div className="relative">
       <Input
@@ -85,22 +95,29 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       />
       
       {showPredictions && predictions.length > 0 && (
-        <Card className="absolute top-full left-0 right-0 z-50 mt-1 bg-gray-800 border-gray-700 max-h-60 overflow-y-auto">
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1 bg-gray-800 border-gray-700 max-h-80 overflow-y-auto">
           <CardContent className="p-0">
             {predictions.map((prediction) => (
               <div
                 key={prediction.place_id}
-                className="flex items-center p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0"
+                className="flex items-start p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0 transition-colors"
                 onClick={() => handlePredictionClick(prediction)}
               >
-                <MapPin className="w-4 h-4 text-yellow-500 mr-3 flex-shrink-0" />
+                <div className="mr-3 mt-0.5 flex-shrink-0">
+                  {getPlaceIcon(prediction.types)}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm font-medium truncate">
                     {prediction.structured_formatting.main_text}
                   </p>
-                  <p className="text-gray-400 text-xs truncate">
+                  <p className="text-gray-400 text-xs truncate mt-0.5">
                     {prediction.structured_formatting.secondary_text}
                   </p>
+                  {prediction.types.length > 0 && (
+                    <p className="text-gray-500 text-xs mt-1 capitalize">
+                      {prediction.types.slice(0, 2).join(', ').replace(/_/g, ' ')}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
