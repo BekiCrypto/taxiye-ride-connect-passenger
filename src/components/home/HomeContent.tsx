@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import LocationSelector from '@/components/LocationSelector';
 import MapView from '@/components/MapView';
 import VehicleSelector from '@/components/VehicleSelector';
-import HomeHeader from './HomeHeader';
 import { Session } from '@supabase/supabase-js';
 
 interface HomeContentProps {
@@ -52,13 +51,6 @@ const HomeContent = ({
 }: HomeContentProps) => {
   return (
     <div className="space-y-4">
-      <HomeHeader 
-        session={session}
-        userProfile={userProfile}
-        isRideInProgress={isRideInProgress}
-        rideData={rideData}
-      />
-
       <MapView
         pickup={pickup}
         dropoff={dropoff}
@@ -72,6 +64,41 @@ const HomeContent = ({
         driverName={rideData?.driverName}
         vehicleType={rideData?.vehicleType}
       />
+
+      {/* Trip Info Display - Show just below map when ride is in progress */}
+      {isRideInProgress && rideData && (
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-white font-semibold">{rideData.driverName}</h3>
+              <p className="text-gray-400 text-sm">{rideData.vehicleType}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-yellow-500 font-bold">{rideData.estimatedTime} min</p>
+              <p className="text-gray-400 text-sm">ETA</p>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center text-green-400 text-sm">
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+              <span className="truncate">{pickup}</span>
+            </div>
+            <div className="flex items-center text-red-400 text-sm">
+              <div className="w-2 h-2 bg-red-400 rounded-full mr-2"></div>
+              <span className="truncate">{dropoff}</span>
+            </div>
+          </div>
+          
+          <div className="bg-gray-700 rounded-full h-2">
+            <div 
+              className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${rideProgress}%` }}
+            ></div>
+          </div>
+          <p className="text-center text-gray-400 text-sm">{Math.round(rideProgress)}% Complete</p>
+        </div>
+      )}
 
       {!isRideInProgress && (
         <LocationSelector

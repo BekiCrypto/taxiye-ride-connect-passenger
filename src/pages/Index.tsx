@@ -17,7 +17,8 @@ const Index = () => {
   const [dropoff, setDropoff] = useState('');
   const [activeInput, setActiveInput] = useState<'pickup' | 'dropoff'>('pickup');
   const [selectedVehicle, setSelectedVehicle] = useState('economy');
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState('auth'); // Start with auth page
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const { isRideInProgress, rideProgress, rideData, handleRideStart } = useRideManagement();
   const { handleProfileAction } = useProfileActions(setCurrentPage);
@@ -27,13 +28,26 @@ const Index = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Session loaded:', session ? 'User logged in' : 'No session');
       setSession(session);
+      
+      // Only navigate to home if user is logged in on initial load
+      if (session && isInitialLoad) {
+        setCurrentPage('home');
+      }
+      setIsInitialLoad(false);
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', session ? 'User logged in' : 'User logged out');
       setSession(session);
+      
+      // Navigate based on auth state
+      if (session) {
+        setCurrentPage('home');
+      } else {
+        setCurrentPage('auth');
+      }
     });
-  }, []);
+  }, [isInitialLoad]);
 
   useEffect(() => {
     if (session?.user) {
