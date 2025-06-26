@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Session } from '@supabase/supabase-js';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
+import { useSecureAuth } from '@/hooks/useSecureAuth';
+import { SecureErrorBoundary } from '@/components/SecureErrorBoundary';
 
 // Component imports
 import BottomNavigation from '@/components/BottomNavigation';
@@ -28,8 +29,6 @@ const Index = () => {
   const [dropoff, setDropoff] = useState('');
   const [activeInput, setActiveInput] = useState<'pickup' | 'dropoff'>('pickup');
   const [selectedVehicle, setSelectedVehicle] = useState('mini');
-  const [session, setSession] = useState<Session | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Ride state
@@ -42,61 +41,39 @@ const Index = () => {
   } | null>(null);
   
   const { toast } = useToast();
+  const { user, session, loading, signOut } = useSecureAuth();
   
   // Initialize Google Maps
   const { isLoaded: mapsLoaded, error: mapsError } = useGoogleMaps();
 
+  // Set up user profile from session
+  const userProfile = session?.user ? {
+    name: session.user.user_metadata?.name || 'User',
+    email: session.user.email,
+    phone: session.user.phone
+  } : null;
+
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      if (session?.user) {
-        setUserProfile({
-          name: session.user.user_metadata?.name || 'User',
-          email: session.user.email,
-          phone: session.user.phone
-        });
-        // If user just signed in and we're on initial load, close auth page
-        if (isInitialLoad && currentPage === 'auth') {
-          setCurrentPage(null);
-        }
-      } else {
-        setUserProfile(null);
-        // Show auth page if no session and it's initial load
-        if (isInitialLoad) {
-          setCurrentPage('auth');
-        }
-      }
-      setIsInitialLoad(false);
-    });
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        setUserProfile({
-          name: session.user.user_metadata?.name || 'User',
-          email: session.user.email,
-          phone: session.user.phone
-        });
-      } else {
-        // Show auth page by default if no session
+    if (!loading) {
+      if (!session && isInitialLoad) {
         setCurrentPage('auth');
+      } else if (session && currentPage === 'auth') {
+        setCurrentPage(null);
       }
       setIsInitialLoad(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [isInitialLoad, currentPage]);
+    }
+  }, [session, loading, isInitialLoad, currentPage]);
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await signOut();
+      if (error) throw error;
+      
       toast({
         title: "Signed Out",
         description: "You have been successfully signed out.",
       });
-      setCurrentPage('auth'); // Show auth page after logout
+      setCurrentPage('auth');
       setActiveTab('home');
     } catch (error: any) {
       toast({
@@ -162,10 +139,18 @@ const Index = () => {
           });
           return 0;
         }
-        return prev + 2; // Increase by 2% every interval
+        return prev + 2;
       });
-    }, 1000); // Update every second
+    }, 1000);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
 
   // Show specific pages
   if (currentPage === 'auth') {
@@ -193,7 +178,7 @@ const Index = () => {
     return (
       <PaymentSelector 
         onBack={() => setCurrentPage(null)} 
-        amount={120} // Example fare amount
+        amount={120}
         rideDetails={{
           pickup: pickup || "Current Location",
           dropoff: dropoff || "Destination",
@@ -243,14 +228,16 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <div className="max-w-md mx-auto bg-gray-900 min-h-screen">
-        <div className="p-4 pb-20">
-          {renderContent()}
+    <SecureErrorBoundary>
+      <div className="min-h-screen bg-gray-900">
+        <div className="max-w-md mx-auto bg-gray-900 min-h-screen">
+          <div className="p-4 pb-20">
+            {renderContent()}
+          </div>
+          <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
-    </div>
+    </SecureErrorBoundary>
   );
 };
 
