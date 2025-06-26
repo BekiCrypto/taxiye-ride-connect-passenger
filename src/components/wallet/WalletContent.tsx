@@ -1,38 +1,61 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Wallet, Plus, History, CreditCard, Smartphone, Building2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import AppFooter from '@/components/AppFooter';
+import TelebirrTopUp from './TelebirrTopUp';
+import CardPaymentTopUp from './CardPaymentTopUp';
+import BankTransferTopUp from './BankTransferTopUp';
 
 const WalletContent = () => {
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  const [openTopUpMethod, setOpenTopUpMethod] = useState<string | null>(null);
+
   const topUpMethods = [
     { 
+      id: 'card',
       icon: CreditCard, 
       name: 'Credit/Debit Card', 
       description: 'Visa, Mastercard',
-      color: 'text-blue-500'
+      color: 'text-blue-500',
+      component: CardPaymentTopUp
     },
     { 
+      id: 'telebirr',
       icon: Smartphone, 
       name: 'Telebirr', 
       description: 'Mobile money',
-      color: 'text-green-500'
+      color: 'text-green-500',
+      component: TelebirrTopUp
     },
     { 
+      id: 'bank',
       icon: Building2, 
       name: 'Bank Transfer', 
       description: 'Direct transfer',
-      color: 'text-purple-500'
+      color: 'text-purple-500',
+      component: BankTransferTopUp
     },
   ];
 
-  const transactions = [
+  const allTransactions = [
     { id: 1, type: 'ride', description: 'Trip to Bole Airport', amount: -45.50, date: '2024-01-15' },
     { id: 2, type: 'topup', description: 'Wallet Top-up', amount: +100.00, date: '2024-01-14' },
     { id: 3, type: 'ride', description: 'Trip to Mercato', amount: -25.00, date: '2024-01-13' },
     { id: 4, type: 'ride', description: 'Trip to 4 Kilo', amount: -18.75, date: '2024-01-12' },
+    { id: 5, type: 'topup', description: 'Telebirr Top-up', amount: +50.00, date: '2024-01-11' },
+    { id: 6, type: 'ride', description: 'Trip to Piazza', amount: -32.25, date: '2024-01-10' },
+    { id: 7, type: 'ride', description: 'Trip to CMC', amount: -15.50, date: '2024-01-09' },
+    { id: 8, type: 'topup', description: 'Card Top-up', amount: +200.00, date: '2024-01-08' },
   ];
+
+  const displayedTransactions = showAllTransactions ? allTransactions : allTransactions.slice(0, 4);
+
+  const toggleTopUpMethod = (methodId: string) => {
+    setOpenTopUpMethod(openTopUpMethod === methodId ? null : methodId);
+  };
 
   return (
     <div className="space-y-6">
@@ -61,6 +84,7 @@ const WalletContent = () => {
           <p className="text-3xl font-bold text-black">ETB 125.50</p>
           <Button 
             className="mt-4 bg-black text-yellow-500 hover:bg-gray-900 font-semibold"
+            onClick={() => setOpenTopUpMethod('card')}
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Money
@@ -74,20 +98,31 @@ const WalletContent = () => {
           <CardTitle className="text-white text-lg">Top-up Methods</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {topUpMethods.map((method, index) => {
+          {topUpMethods.map((method) => {
             const Icon = method.icon;
+            const TopUpComponent = method.component;
+            const isOpen = openTopUpMethod === method.id;
+            
             return (
-              <Button
-                key={index}
-                variant="ghost"
-                className="w-full justify-start h-14 text-white hover:bg-gray-700"
-              >
-                <Icon className={`w-5 h-5 mr-3 ${method.color}`} />
-                <div className="text-left">
-                  <p className="font-medium">{method.name}</p>
-                  <p className="text-sm text-gray-400">{method.description}</p>
-                </div>
-              </Button>
+              <div key={method.id}>
+                <Collapsible open={isOpen} onOpenChange={() => toggleTopUpMethod(method.id)}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start h-14 text-white hover:bg-gray-700"
+                    >
+                      <Icon className={`w-5 h-5 mr-3 ${method.color}`} />
+                      <div className="text-left flex-1">
+                        <p className="font-medium">{method.name}</p>
+                        <p className="text-sm text-gray-400">{method.description}</p>
+                      </div>
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-3">
+                    <TopUpComponent />
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
             );
           })}
         </CardContent>
@@ -97,13 +132,18 @@ const WalletContent = () => {
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-white text-lg">Recent Transactions</CardTitle>
-          <Button variant="ghost" size="sm" className="text-yellow-500">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-yellow-500"
+            onClick={() => setShowAllTransactions(!showAllTransactions)}
+          >
             <History className="w-4 h-4 mr-1" />
-            View All
+            {showAllTransactions ? 'Show Less' : 'View All'}
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
-          {transactions.map((transaction) => (
+          {displayedTransactions.map((transaction) => (
             <div key={transaction.id} className="flex items-center justify-between py-2">
               <div>
                 <p className="text-white font-medium">{transaction.description}</p>
