@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,9 @@ import {
   LogOut, 
   Settings,
   Star,
-  Gift
+  Gift,
+  Lock,
+  Phone
 } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 import AppFooter from '@/components/AppFooter';
@@ -35,6 +36,18 @@ const ProfileContent = ({ session, userProfile, onProfileAction }: ProfileConten
       icon: MapPin, 
       label: 'Saved Addresses', 
       action: 'saved-addresses',
+      available: true 
+    },
+    { 
+      icon: Lock, 
+      label: 'Change Password', 
+      action: 'change-password',
+      available: true 
+    },
+    { 
+      icon: Phone, 
+      label: 'Change Phone Number', 
+      action: 'change-phone',
       available: true 
     },
     { 

@@ -1,101 +1,113 @@
-
 import React, { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import { useSecureAuth } from '@/hooks/useSecureAuth';
+import { useRouter } from 'next/router';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { SecureErrorBoundary } from '@/components/SecureErrorBoundary';
-
-// Component imports
-import BottomNavigation from '@/components/BottomNavigation';
 import AuthPage from '@/components/AuthPage';
+import HomeHeader from '@/components/home/HomeHeader';
+import HomeContent from '@/components/home/HomeContent';
+import WalletContent from '@/components/wallet/WalletContent';
+import TripsContent from '@/components/TripsContent';
+import ProfileContent from '@/components/profile/ProfileContent';
+import BottomNavigation from '@/components/BottomNavigation';
+import PaymentSelector from '@/components/payment/PaymentSelector';
 import EditProfilePage from '@/components/EditProfilePage';
 import SavedAddressesPage from '@/components/SavedAddressesPage';
 import NotificationsPage from '@/components/NotificationsPage';
+import ReferralPage from '@/components/ReferralPage';
 import HelpSupportPage from '@/components/HelpSupportPage';
 import TripHistoryPage from '@/components/TripHistoryPage';
-import PaymentSelector from '@/components/payment/PaymentSelector';
-import ReferralPage from '@/components/ReferralPage';
-
-// Content components
-import HomeContent from '@/components/home/HomeContent';
-import WalletContent from '@/components/wallet/WalletContent';
-import TripsContent from '@/components/trips/TripsContent';
-import ProfileContent from '@/components/profile/ProfileContent';
+import ChangePasswordPage from '@/components/ChangePasswordPage';
+import ChangePhonePage from '@/components/ChangePhonePage';
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('home');
-  const [currentPage, setCurrentPage] = useState<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [pickup, setPickup] = useState('');
   const [dropoff, setDropoff] = useState('');
   const [activeInput, setActiveInput] = useState<'pickup' | 'dropoff'>('pickup');
-  const [selectedVehicle, setSelectedVehicle] = useState('mini');
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  
-  // Ride state
+  const [selectedVehicle, setSelectedVehicle] = useState('economy');
   const [isRideInProgress, setIsRideInProgress] = useState(false);
   const [rideProgress, setRideProgress] = useState(0);
-  const [rideData, setRideData] = useState<{
-    vehicleType: string;
-    driverName: string;
-    estimatedTime: number;
-  } | null>(null);
-  
-  const { toast } = useToast();
-  const { user, session, loading, signOut } = useSecureAuth();
-  
-  // Initialize Google Maps
-  const { isLoaded: mapsLoaded, error: mapsError } = useGoogleMaps();
-
-  // Set up user profile from session
-  const userProfile = session?.user ? {
-    name: session.user.user_metadata?.name || 'User',
-    email: session.user.email,
-    phone: session.user.phone
-  } : null;
+  const [rideData, setRideData] = useState<any>(null);
+  const router = useRouter();
+  const [currentPage, setCurrentPage] = useState('home');
 
   useEffect(() => {
-    if (!loading) {
-      if (!session && isInitialLoad) {
-        setCurrentPage('auth');
-      } else if (session && currentPage === 'auth') {
-        setCurrentPage(null);
-      }
-      setIsInitialLoad(false);
-    }
-  }, [session, loading, isInitialLoad, currentPage]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
-  const handleSignOut = async () => {
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchUserProfile(session.user.id);
+    } else {
+      setUserProfile(null);
+    }
+  }, [session]);
+
+  const fetchUserProfile = async (userId: string) => {
     try {
-      const { error } = await signOut();
-      if (error) throw error;
-      
-      toast({
-        title: "Signed Out",
-        description: "You have been successfully signed out.",
-      });
-      setCurrentPage('auth');
-      setActiveTab('home');
-    } catch (error: any) {
-      toast({
-        title: "Sign Out Failed",
-        description: error.message || "Failed to sign out. Please try again.",
-        variant: "destructive",
-      });
+      const { data, error } = await supabase
+        .from('passengers')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+      } else {
+        setUserProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
     }
   };
 
-  const handleProfileAction = (action: string) => {
-    if (!session && action !== 'auth') {
-      setCurrentPage('auth');
-      return;
-    }
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/auth');
+  };
 
+  const handleRideStart = (rideInfo: any) => {
+    setIsRideInProgress(true);
+    setRideData(rideInfo);
+    setRideProgress(20);
+
+    // Simulate ride progress
+    const interval = setInterval(() => {
+      setRideProgress((prevProgress) => {
+        const newProgress = Math.min(prevProgress + 20, 100);
+        if (newProgress === 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsRideInProgress(false);
+            setRideProgress(0);
+            setRideData(null);
+          }, 3000);
+        }
+        return newProgress;
+      });
+    }, 2000);
+  };
+
+  const handleProfileAction = (action: string) => {
+    console.log('Profile action:', action);
+    
     switch (action) {
-      case 'auth':
-        setCurrentPage('auth');
-        break;
       case 'edit-profile':
         setCurrentPage('edit-profile');
+        break;
+      case 'change-password':
+        setCurrentPage('change-password');
+        break;
+      case 'change-phone':
+        setCurrentPage('change-phone');
         break;
       case 'saved-addresses':
         setCurrentPage('saved-addresses');
@@ -109,132 +121,132 @@ const Index = () => {
       case 'help-support':
         setCurrentPage('help-support');
         break;
+      case 'auth':
+        setCurrentPage('auth');
+        break;
       case 'logout':
         handleSignOut();
         break;
       default:
-        break;
+        console.log('Unknown profile action:', action);
     }
   };
 
-  const handleRideStart = (rideInfo: {
-    vehicleType: string;
-    driverName: string;
-    estimatedTime: number;
-  }) => {
-    setIsRideInProgress(true);
-    setRideData(rideInfo);
-    setRideProgress(0);
-    
-    // Simulate ride progress
-    const progressInterval = setInterval(() => {
-      setRideProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          setIsRideInProgress(false);
-          setRideData(null);
-          toast({
-            title: "Ride Completed!",
-            description: "Thank you for riding with Taxiye. Rate your trip!",
-          });
-          return 0;
-        }
-        return prev + 2;
-      });
-    }, 1000);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    );
-  }
-
-  // Show specific pages
-  if (currentPage === 'auth') {
-    return <AuthPage onBack={() => setCurrentPage(null)} />;
-  }
-  if (currentPage === 'edit-profile') {
-    return <EditProfilePage onBack={() => setCurrentPage(null)} />;
-  }
-  if (currentPage === 'saved-addresses') {
-    return <SavedAddressesPage onBack={() => setCurrentPage(null)} />;
-  }
-  if (currentPage === 'notifications') {
-    return <NotificationsPage onBack={() => setCurrentPage(null)} />;
-  }
-  if (currentPage === 'referral') {
-    return <ReferralPage onBack={() => setCurrentPage(null)} />;
-  }
-  if (currentPage === 'help-support') {
-    return <HelpSupportPage onBack={() => setCurrentPage(null)} />;
-  }
-  if (currentPage === 'trip-history') {
-    return <TripHistoryPage onBack={() => setCurrentPage(null)} />;
-  }
-  if (currentPage === 'payment') {
-    return (
-      <PaymentSelector 
-        onBack={() => setCurrentPage(null)} 
-        amount={120}
-        rideDetails={{
-          pickup: pickup || "Current Location",
-          dropoff: dropoff || "Destination",
-          vehicleType: selectedVehicle
-        }}
-      />
-    );
-  }
-
-  const renderContent = () => {
-    switch (activeTab) {
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case 'auth':
+        return <AuthPage onBack={() => setCurrentPage('home')} />;
+      case 'edit-profile':
+        return <EditProfilePage onBack={() => setCurrentPage('profile')} />;
+      case 'change-password':
+        return <ChangePasswordPage onBack={() => setCurrentPage('profile')} />;
+      case 'change-phone':
+        return <ChangePhonePage onBack={() => setCurrentPage('profile')} />;
+      case 'saved-addresses':
+        return <SavedAddressesPage onBack={() => setCurrentPage('profile')} />;
+      case 'notifications':
+        return <NotificationsPage onBack={() => setCurrentPage('profile')} />;
+      case 'referral':
+        return <ReferralPage onBack={() => setCurrentPage('profile')} />;
+      case 'help-support':
+        return <HelpSupportPage onBack={() => setCurrentPage('profile')} />;
+      case 'trip-history':
+        return <TripHistoryPage onBack={() => setCurrentPage('trips')} />;
+      case 'payment':
+        return (
+          <PaymentSelector
+            onBack={() => setCurrentPage('home')}
+            amount={120}
+            rideDetails={{
+              pickup: pickup,
+              dropoff: dropoff,
+              vehicleType: selectedVehicle
+            }}
+          />
+        );
       case 'home':
         return (
-          <HomeContent
-            session={session}
-            userProfile={userProfile}
-            pickup={pickup}
-            dropoff={dropoff}
-            activeInput={activeInput}
-            selectedVehicle={selectedVehicle}
-            isRideInProgress={isRideInProgress}
-            rideProgress={rideProgress}
-            rideData={rideData}
-            onPickupChange={setPickup}
-            onDropoffChange={setDropoff}
-            onActiveInputChange={setActiveInput}
-            onVehicleChange={setSelectedVehicle}
-            onRideStart={handleRideStart}
-            onPaymentClick={() => setCurrentPage('payment')}
-          />
+          <div className="space-y-4">
+            <HomeHeader 
+              session={session}
+              userProfile={userProfile}
+              isRideInProgress={isRideInProgress}
+              rideData={rideData}
+            />
+            <HomeContent
+              session={session}
+              userProfile={userProfile}
+              pickup={pickup}
+              dropoff={dropoff}
+              activeInput={activeInput}
+              selectedVehicle={selectedVehicle}
+              isRideInProgress={isRideInProgress}
+              rideProgress={rideProgress}
+              rideData={rideData}
+              onPickupChange={setPickup}
+              onDropoffChange={setDropoff}
+              onActiveInputChange={setActiveInput}
+              onVehicleChange={setSelectedVehicle}
+              onRideStart={handleRideStart}
+              onPaymentClick={() => setCurrentPage('payment')}
+            />
+          </div>
         );
       case 'wallet':
         return <WalletContent />;
       case 'trips':
-        return <TripsContent onViewTripHistory={() => setCurrentPage('trip-history')} />;
+        return <TripsContent onTripHistoryClick={() => setCurrentPage('trip-history')} />;
       case 'profile':
         return (
-          <ProfileContent
+          <ProfileContent 
             session={session}
             userProfile={userProfile}
             onProfileAction={handleProfileAction}
           />
         );
       default:
-        return null;
+        return (
+          <div className="space-y-4">
+            <HomeHeader 
+              session={session}
+              userProfile={userProfile}
+              isRideInProgress={isRideInProgress}
+              rideData={rideData}
+            />
+            <HomeContent
+              session={session}
+              userProfile={userProfile}
+              pickup={pickup}
+              dropoff={dropoff}
+              activeInput={activeInput}
+              selectedVehicle={selectedVehicle}
+              isRideInProgress={isRideInProgress}
+              rideProgress={rideProgress}
+              rideData={rideData}
+              onPickupChange={setPickup}
+              onDropoffChange={setDropoff}
+              onActiveInputChange={setActiveInput}
+              onVehicleChange={setSelectedVehicle}
+              onRideStart={handleRideStart}
+              onPaymentClick={() => setCurrentPage('payment')}
+            />
+          </div>
+        );
     }
   };
 
   return (
     <SecureErrorBoundary>
       <div className="min-h-screen bg-gray-900">
-        <div className="max-w-md mx-auto bg-gray-900 min-h-screen">
-          <div className="p-4 pb-20">
-            {renderContent()}
-          </div>
-          <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <div className="max-w-md mx-auto relative">
+          {renderCurrentPage()}
+          
+          {!['auth', 'edit-profile', 'change-password', 'change-phone', 'saved-addresses', 'notifications', 'referral', 'help-support', 'trip-history', 'payment'].includes(currentPage) && (
+            <BottomNavigation 
+              activeTab={currentPage} 
+              onTabChange={setCurrentPage}
+            />
+          )}
         </div>
       </div>
     </SecureErrorBoundary>
