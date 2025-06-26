@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -59,10 +60,10 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
 
       if (authError) throw authError;
 
-      // Update passenger profile if exists
+      // Update passenger profile if exists (using phone as key)
       const { data: passengerData } = await supabase
         .from('passengers')
-        .select('id')
+        .select('phone')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -70,15 +71,15 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
         const { error: passengerError } = await supabase
           .from('passengers')
           .update({ name: formData.name })
-          .eq('user_id', user.id);
+          .eq('phone', passengerData.phone);
 
         if (passengerError) throw passengerError;
       }
 
-      // Update driver profile if exists
+      // Update driver profile if exists (using phone as key)
       const { data: driverData } = await supabase
         .from('drivers')
-        .select('id')
+        .select('phone')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -86,7 +87,7 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
         const { error: driverError } = await supabase
           .from('drivers')
           .update({ name: formData.name })
-          .eq('user_id', user.id);
+          .eq('phone', driverData.phone);
 
         if (driverError) throw driverError;
       }
