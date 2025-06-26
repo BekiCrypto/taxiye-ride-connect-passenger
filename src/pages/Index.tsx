@@ -13,6 +13,7 @@ import NotificationsPage from '@/components/NotificationsPage';
 import HelpSupportPage from '@/components/HelpSupportPage';
 import TripHistoryPage from '@/components/TripHistoryPage';
 import PaymentSelector from '@/components/payment/PaymentSelector';
+import ReferralPage from '@/components/ReferralPage';
 
 // Content components
 import HomeContent from '@/components/home/HomeContent';
@@ -125,6 +126,9 @@ const Index = () => {
       case 'notifications':
         setCurrentPage('notifications');
         break;
+      case 'referral':
+        setCurrentPage('referral');
+        break;
       case 'help-support':
         setCurrentPage('help-support');
         break;
@@ -175,6 +179,9 @@ const Index = () => {
   }
   if (currentPage === 'notifications') {
     return <NotificationsPage onBack={() => setCurrentPage(null)} />;
+  }
+  if (currentPage === 'referral') {
+    return <ReferralPage onBack={() => setCurrentPage(null)} />;
   }
   if (currentPage === 'help-support') {
     return <HelpSupportPage onBack={() => setCurrentPage(null)} />;
