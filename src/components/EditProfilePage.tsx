@@ -91,72 +91,39 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
     setLoading(true);
     try {
       const formattedPhone = formatPhoneNumber(formData.phone);
-      
-      // Send OTP to email using Supabase's built-in system
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Use Supabase's email OTP for phone verification
-      const { error } = await supabase.auth.updateUser({
-        phone: formattedPhone
+      // Send OTP to both email and phone
+      // Send email OTP
+      const { error: emailError } = await supabase.auth.signInWithOtp({
+        email: user.email!,
+        options: { shouldCreateUser: false }
       });
 
-      if (error) {
-        // If phone update fails due to existing phone, send email OTP instead
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: user.email!,
-          options: {
-            shouldCreateUser: false
-          }
-        });
+      if (emailError) console.warn('Email OTP error:', emailError);
 
-        if (otpError) throw otpError;
+      // Send SMS OTP
+      const { error: smsError } = await supabase.auth.signInWithOtp({
+        phone: formattedPhone,
+        options: { shouldCreateUser: false }
+      });
 
-        toast({
-          title: "Verification Code Sent",
-          description: "We've sent a 6-digit code to your email to verify this phone number change.",
-        });
-      } else {
-        toast({
-          title: "Phone Updated",
-          description: "Your phone number has been updated successfully.",
-        });
-        setOriginalPhone(formattedPhone);
-        setFormData(prev => ({ ...prev, phone: formattedPhone }));
-        return;
-      }
+      if (smsError) console.warn('SMS OTP error:', smsError);
+
+      toast({
+        title: "Verification Codes Sent",
+        description: "We've sent 6-digit codes to both your email and the new phone number for verification.",
+      });
       
       setShowOtpVerification(true);
     } catch (error: any) {
       console.error('Phone update error:', error);
-      
-      // Send email OTP as fallback
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) {
-          const { error: otpError } = await supabase.auth.signInWithOtp({
-            email: user.email,
-            options: {
-              shouldCreateUser: false
-            }
-          });
-
-          if (otpError) throw otpError;
-
-          toast({
-            title: "Verification Required",
-            description: "We've sent a 6-digit code to your email to verify this phone number change.",
-          });
-          
-          setShowOtpVerification(true);
-        }
-      } catch (fallbackError: any) {
-        toast({
-          title: "Failed to Send Verification",
-          description: fallbackError.message || "Could not send verification code. Please try again.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Failed to Send Verification",
+        description: error.message || "Could not send verification codes. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -177,93 +144,115 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Verify OTP using Supabase's built-in system
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        email: user.email!,
-        token: otpCode,
-        type: 'email'
-      });
-
-      if (verifyError) throw verifyError;
-
-      const formattedPhone = formatPhoneNumber(formData.phone);
-
-      // Update user auth data
-      const { error: authError } = await supabase.auth.updateUser({
-        phone: formattedPhone,
-        data: {
-          name: formData.name
+      // Try email verification first
+      let verified = false;
+      
+      try {
+        const { data, error } = await supabase.auth.verifyOtp({
+          email: user.email!,
+          token: otpCode,
+          type: 'email'
+        });
+        
+        if (!error && data) {
+          verified = true;
         }
-      });
-
-      if (authError) throw authError;
-
-      // Update passenger profile if exists
-      const { data: passengerData } = await supabase
-        .from('passengers')
-        .select('phone')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (passengerData) {
-        // If passenger exists, update with new phone as primary key
-        if (originalPhone) {
-          // Update existing record
-          const { error: passengerError } = await supabase
-            .from('passengers')
-            .update({ 
-              name: formData.name,
-              phone: formattedPhone 
-            })
-            .eq('phone', originalPhone);
-
-          if (passengerError) throw passengerError;
-        } else {
-          // Insert new record with phone
-          const { error: insertError } = await supabase
-            .from('passengers')
-            .insert({
-              phone: formattedPhone,
-              user_id: user.id,
-              name: formData.name,
-              email: user.email
-            });
-
-          if (insertError) throw insertError;
-        }
+      } catch (emailError) {
+        console.log('Email verification failed, trying phone...');
+      }
+      
+      // If email verification failed, try phone verification
+      if (!verified) {
+        const formattedPhone = formatPhoneNumber(formData.phone);
+        const { data, error } = await supabase.auth.verifyOtp({
+          phone: formattedPhone,
+          token: otpCode,
+          type: 'sms'
+        });
+        
+        if (error) throw error;
+        verified = true;
       }
 
-      // Update driver profile if exists
-      const { data: driverData } = await supabase
-        .from('drivers')
-        .select('phone')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      if (verified) {
+        const formattedPhone = formatPhoneNumber(formData.phone);
 
-      if (driverData) {
-        if (originalPhone) {
-          const { error: driverError } = await supabase
-            .from('drivers')
-            .update({ 
-              name: formData.name,
-              phone: formattedPhone 
-            })
-            .eq('phone', originalPhone);
+        // Update user auth data
+        const { error: authError } = await supabase.auth.updateUser({
+          phone: formattedPhone,
+          data: {
+            name: formData.name
+          }
+        });
 
-          if (driverError) throw driverError;
+        if (authError) throw authError;
+
+        // Update passenger profile if exists
+        const { data: passengerData } = await supabase
+          .from('passengers')
+          .select('phone')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (passengerData) {
+          // If passenger exists, update with new phone as primary key
+          if (originalPhone) {
+            // Update existing record
+            const { error: passengerError } = await supabase
+              .from('passengers')
+              .update({ 
+                name: formData.name,
+                phone: formattedPhone 
+              })
+              .eq('phone', originalPhone);
+
+            if (passengerError) throw passengerError;
+          } else {
+            // Insert new record with phone
+            const { error: insertError } = await supabase
+              .from('passengers')
+              .insert({
+                phone: formattedPhone,
+                user_id: user.id,
+                name: formData.name,
+                email: user.email
+              });
+
+            if (insertError) throw insertError;
+          }
         }
-      }
 
-      toast({
-        title: "Profile Updated",
-        description: "Your phone number has been verified and profile updated successfully.",
-      });
-      
-      setShowOtpVerification(false);
-      setOtpCode('');
-      setOriginalPhone(formattedPhone);
-      setFormData(prev => ({ ...prev, phone: formattedPhone }));
-      
+        // Update driver profile if exists
+        const { data: driverData } = await supabase
+          .from('drivers')
+          .select('phone')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (driverData) {
+          if (originalPhone) {
+            const { error: driverError } = await supabase
+              .from('drivers')
+              .update({ 
+                name: formData.name,
+                phone: formattedPhone 
+              })
+              .eq('phone', originalPhone);
+
+            if (driverError) throw driverError;
+          }
+        }
+
+        toast({
+          title: "Profile Updated",
+          description: "Your phone number has been verified and profile updated successfully.",
+        });
+        
+        setShowOtpVerification(false);
+        setOtpCode('');
+        setOriginalPhone(formattedPhone);
+        setFormData(prev => ({ ...prev, phone: formattedPhone }));
+      }
     } catch (error: any) {
       console.error('Verification error:', error);
       toast({
@@ -369,7 +358,7 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
               </div>
               <CardTitle className="text-white">Enter Verification Code</CardTitle>
               <p className="text-gray-400 text-sm">
-                We've sent a 6-digit code to your email to verify your phone number
+                We've sent 6-digit codes to both your email and phone number
               </p>
             </CardHeader>
             
@@ -405,8 +394,12 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
                 className="w-full text-yellow-500"
                 disabled={loading}
               >
-                Resend Code
+                Resend Codes
               </Button>
+              
+              <p className="text-xs text-gray-400 text-center">
+                You can use the code from either your email or phone number.
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -476,7 +469,7 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
               {originalPhone ? (
                 <p className="text-xs text-gray-400 mt-1">Phone number is verified and cannot be changed</p>
               ) : (
-                <p className="text-xs text-yellow-400 mt-1">Phone number will require email OTP verification</p>
+                <p className="text-xs text-yellow-400 mt-1">Phone number will require SMS and email OTP verification</p>
               )}
             </div>
             

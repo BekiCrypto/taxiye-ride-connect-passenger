@@ -57,7 +57,7 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
         const formattedPhone = formatPhoneNumber(formData.phone);
         console.log('Formatted phone number:', formattedPhone);
         
-        // Use Supabase's built-in email OTP signup
+        // Use Supabase's built-in signup with phone
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -68,18 +68,33 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
               email: formData.email,
               phone: formattedPhone,
               user_type: 'passenger'
-            },
-            emailRedirectTo: undefined // Prevent email link, force OTP only
+            }
           }
         });
         
         if (error) throw error;
         
-        // Check if user needs email confirmation
+        // Send OTP to both email and phone
         if (data.user && !data.user.email_confirmed_at) {
+          // Send email OTP
+          const { error: emailError } = await supabase.auth.signInWithOtp({
+            email: formData.email,
+            options: { shouldCreateUser: false }
+          });
+          
+          if (emailError) console.warn('Email OTP error:', emailError);
+          
+          // Send SMS OTP
+          const { error: smsError } = await supabase.auth.signInWithOtp({
+            phone: formattedPhone,
+            options: { shouldCreateUser: false }
+          });
+          
+          if (smsError) console.warn('SMS OTP error:', smsError);
+          
           toast({
             title: "Verification Required",
-            description: "Please check your email for the 6-digit verification code.",
+            description: "Please check your email and phone for the 6-digit verification code. You can use the code from either source.",
           });
           setStep('otp');
         } else {
@@ -119,25 +134,48 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
   const handleOTPVerify = async () => {
     setLoading(true);
     try {
-      // Verify email OTP using Supabase's built-in system
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: formData.email,
-        token: formData.otp,
-        type: 'email'
-      });
+      // Try email verification first
+      let verified = false;
       
-      if (error) throw error;
+      try {
+        const { data, error } = await supabase.auth.verifyOtp({
+          email: formData.email,
+          token: formData.otp,
+          type: 'email'
+        });
+        
+        if (!error && data) {
+          verified = true;
+        }
+      } catch (emailError) {
+        console.log('Email verification failed, trying phone...');
+      }
       
-      toast({
-        title: "Account Verified Successfully!",
-        description: "Welcome to Taxiye! You can now use all our services.",
-      });
-      onBack();
+      // If email verification failed, try phone verification
+      if (!verified) {
+        const formattedPhone = formatPhoneNumber(formData.phone);
+        const { data, error } = await supabase.auth.verifyOtp({
+          phone: formattedPhone,
+          token: formData.otp,
+          type: 'sms'
+        });
+        
+        if (error) throw error;
+        verified = true;
+      }
+      
+      if (verified) {
+        toast({
+          title: "Account Verified Successfully!",
+          description: "Welcome to Taxiye! You can now use all our services.",
+        });
+        onBack();
+      }
     } catch (error: any) {
       console.error('OTP verification error:', error);
       toast({
         title: "Verification Failed",
-        description: error.message || "Invalid code. Please check the 6-digit code sent to your email and try again.",
+        description: error.message || "Invalid code. Please check the 6-digit code sent to your email or phone and try again.",
         variant: "destructive",
       });
     } finally {
@@ -148,23 +186,33 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
   const handleResendCode = async () => {
     setLoading(true);
     try {
+      const formattedPhone = formatPhoneNumber(formData.phone);
+      
       // Resend email OTP
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: formData.email
+      const { error: emailError } = await supabase.auth.signInWithOtp({
+        email: formData.email,
+        options: { shouldCreateUser: false }
       });
       
-      if (error) throw error;
+      if (emailError) console.warn('Email resend error:', emailError);
+      
+      // Resend SMS OTP
+      const { error: smsError } = await supabase.auth.signInWithOtp({
+        phone: formattedPhone,
+        options: { shouldCreateUser: false }
+      });
+      
+      if (smsError) console.warn('SMS resend error:', smsError);
       
       toast({
-        title: "Code Resent",
-        description: "A new verification code has been sent to your email.",
+        title: "Codes Resent",
+        description: "New verification codes have been sent to your email and phone.",
       });
     } catch (error: any) {
       console.error('Resend error:', error);
       toast({
         title: "Resend Failed",
-        description: error.message || "Failed to resend code. Please try again.",
+        description: error.message || "Failed to resend codes. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -194,7 +242,7 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
             </div>
             <CardTitle className="text-white">Enter Verification Code</CardTitle>
             <p className="text-gray-400 text-sm">
-              We've sent a 6-digit code to {formData.email}
+              We've sent a 6-digit code to both {formData.email} and {formData.phone}
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -229,11 +277,11 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
               className="w-full text-yellow-500"
               disabled={loading}
             >
-              Resend Code
+              Resend Codes
             </Button>
             
             <p className="text-xs text-gray-400 text-center">
-              Didn't receive the code? Check your spam folder or click resend.
+              Didn't receive the codes? Check your spam folder or click resend. You can use the code from either your email or phone.
             </p>
           </CardContent>
         </Card>
@@ -335,7 +383,7 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
           
           {mode === 'signup' && (
             <p className="text-xs text-gray-400 text-center">
-              After signing up, you'll receive a 6-digit verification code via email to activate your account.
+              After signing up, you'll receive 6-digit verification codes via both email and SMS to activate your account.
             </p>
           )}
         </CardContent>
