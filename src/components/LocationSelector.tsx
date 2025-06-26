@@ -1,8 +1,6 @@
 
 import React from 'react';
-import { Navigation } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 import { PlaceDetails } from '@/services/googleMapsService';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
@@ -12,41 +10,40 @@ interface LocationSelectorProps {
   dropoff: string;
   onPickupChange: (value: string) => void;
   onDropoffChange: (value: string) => void;
+  activeInput: 'pickup' | 'dropoff';
+  onActiveInputChange: (input: 'pickup' | 'dropoff') => void;
 }
 
-const LocationSelector = ({ pickup, dropoff, onPickupChange, onDropoffChange }: LocationSelectorProps) => {
+const LocationSelector = ({ 
+  pickup, 
+  dropoff, 
+  onPickupChange, 
+  onDropoffChange,
+  activeInput,
+  onActiveInputChange
+}: LocationSelectorProps) => {
   const { isLoaded, error } = useGoogleMaps();
 
   const handlePickupSelect = (place: PlaceDetails) => {
     console.log('Pickup location selected:', place);
-    // Store the place details for later use if needed
+    onPickupChange(place.formatted_address);
   };
 
   const handleDropoffSelect = (place: PlaceDetails) => {
     console.log('Dropoff location selected:', place);
-    // Store the place details for later use if needed
-  };
-
-  const handleCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          console.log('Current location:', position.coords);
-          // For now, just set a placeholder text
-          onPickupChange('Current Location');
-        },
-        (error) => {
-          console.error('Error getting current location:', error);
-        }
-      );
-    }
+    onDropoffChange(place.formatted_address);
   };
 
   return (
     <Card className="bg-gray-800 border-gray-700">
       <CardContent className="p-4 space-y-4">
         {/* Pickup Location */}
-        <div className="relative">
+        <div 
+          className={`relative cursor-pointer rounded-md transition-colors ${
+            activeInput === 'pickup' ? 'bg-gray-700/50' : ''
+          }`}
+          onClick={() => onActiveInputChange('pickup')}
+        >
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
           </div>
@@ -64,17 +61,9 @@ const LocationSelector = ({ pickup, dropoff, onPickupChange, onDropoffChange }: 
               placeholder="Pickup location"
               value={pickup}
               onChange={(e) => onPickupChange(e.target.value)}
-              className="w-full pl-10 pr-12 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:border-yellow-500 rounded-md"
+              className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:border-yellow-500 rounded-md"
             />
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCurrentLocation}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-yellow-500 hover:bg-gray-600"
-          >
-            <Navigation className="w-4 h-4" />
-          </Button>
         </div>
 
         {/* Connector Line */}
@@ -83,7 +72,12 @@ const LocationSelector = ({ pickup, dropoff, onPickupChange, onDropoffChange }: 
         </div>
 
         {/* Dropoff Location */}
-        <div className="relative">
+        <div 
+          className={`relative cursor-pointer rounded-md transition-colors ${
+            activeInput === 'dropoff' ? 'bg-gray-700/50' : ''
+          }`}
+          onClick={() => onActiveInputChange('dropoff')}
+        >
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
           </div>

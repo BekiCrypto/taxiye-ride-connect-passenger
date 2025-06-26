@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Phone, MapPin, Wallet, History, User, Menu, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,8 @@ import { Session } from '@supabase/supabase-js';
 import BottomNavigation from '@/components/BottomNavigation';
 import RideRequestCard from '@/components/RideRequestCard';
 import LocationSelector from '@/components/LocationSelector';
+import MapView from '@/components/MapView';
+import VehicleSelector from '@/components/VehicleSelector';
 import AuthPage from '@/components/AuthPage';
 import EditProfilePage from '@/components/EditProfilePage';
 import SavedAddressesPage from '@/components/SavedAddressesPage';
@@ -20,6 +23,8 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState<string | null>(null);
   const [pickup, setPickup] = useState('');
   const [dropoff, setDropoff] = useState('');
+  const [activeInput, setActiveInput] = useState<'pickup' | 'dropoff'>('pickup');
+  const [selectedVehicle, setSelectedVehicle] = useState('economy');
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
@@ -123,9 +128,9 @@ const Index = () => {
     switch (activeTab) {
       case 'home':
         return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 flex items-center justify-center">
                   <img 
@@ -146,23 +151,15 @@ const Index = () => {
               </Button>
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-4 text-center">
-                  <MapPin className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-                  <p className="text-white text-sm font-medium">Home</p>
-                  <p className="text-gray-400 text-xs">Bole, Addis Ababa</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-4 text-center">
-                  <MapPin className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-                  <p className="text-white text-sm font-medium">Work</p>
-                  <p className="text-gray-400 text-xs">CMC, Addis Ababa</p>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Google Maps View */}
+            <MapView
+              pickup={pickup}
+              dropoff={dropoff}
+              onPickupChange={setPickup}
+              onDropoffChange={setDropoff}
+              activeInput={activeInput}
+              onActiveInputChange={setActiveInput}
+            />
 
             {/* Location Selection */}
             <LocationSelector
@@ -170,6 +167,14 @@ const Index = () => {
               dropoff={dropoff}
               onPickupChange={setPickup}
               onDropoffChange={setDropoff}
+              activeInput={activeInput}
+              onActiveInputChange={setActiveInput}
+            />
+
+            {/* Vehicle Selection */}
+            <VehicleSelector
+              selectedVehicle={selectedVehicle}
+              onVehicleChange={setSelectedVehicle}
             />
 
             {/* Ride Request Card */}
