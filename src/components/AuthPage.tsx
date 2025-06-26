@@ -60,7 +60,8 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
             options: {
               emailRedirectTo: `${window.location.origin}/`,
               data: {
-                name: formData.name
+                name: formData.name,
+                email: formData.email
               }
             }
           });
@@ -87,24 +88,19 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
           onBack();
         }
       } else {
-        // Phone authentication
+        // Phone authentication - Show info about SMS setup
         const formattedPhone = formatPhoneNumber(formData.phone);
         console.log('Formatted phone number:', formattedPhone);
         
-        const { error } = await supabase.auth.signInWithOtp({
-          phone: formattedPhone,
-          options: {
-            data: mode === 'signup' ? { name: formData.name, phone: formattedPhone } : { phone: formattedPhone }
-          }
-        });
-        
-        if (error) throw error;
-        
+        // For now, show a message that SMS is not configured
         toast({
-          title: "OTP Sent",
-          description: "Please enter the verification code sent to your phone.",
+          title: "SMS Authentication Not Available",
+          description: "Phone authentication requires SMS provider setup in Supabase. Please use email authentication instead.",
+          variant: "destructive",
         });
-        setStep('otp');
+        
+        // Automatically switch to email mode
+        setAuthType('email');
       }
     } catch (error: any) {
       console.error('Auth error:', error);
@@ -268,23 +264,23 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
             </Button>
           </div>
 
-          {/* Auth Type Toggle */}
+          {/* Auth Type Toggle - Email only for now */}
           <div className="flex bg-gray-700 rounded-lg p-1">
             <Button
-              variant={authType === 'email' ? 'secondary' : 'ghost'}
-              onClick={() => setAuthType('email')}
+              variant="secondary"
               className="flex-1 text-sm"
             >
               <Mail className="w-4 h-4 mr-2" />
               Email
             </Button>
             <Button
-              variant={authType === 'phone' ? 'secondary' : 'ghost'}
-              onClick={() => setAuthType('phone')}
-              className="flex-1 text-sm"
+              variant="ghost"
+              disabled
+              className="flex-1 text-sm opacity-50"
+              title="SMS authentication requires setup in Supabase"
             >
               <Phone className="w-4 h-4 mr-2" />
-              Phone
+              Phone (Coming Soon)
             </Button>
           </div>
 
@@ -298,52 +294,33 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
               />
             )}
             
-            {authType === 'email' ? (
-              <>
-                <Input
-                  type="email"
-                  placeholder="Email Address"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-                <Input
-                  type="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-              </>
-            ) : (
-              <div>
-                <Input
-                  type="tel"
-                  placeholder="Phone Number (e.g., 0911300466 or +251911300466)"
-                  value={formData.phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  className="bg-gray-700 border-gray-600 text-white"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Ethiopian format: 0911300466 or +251911300466
-                </p>
-              </div>
-            )}
+            <Input
+              type="email"
+              placeholder="Email Address"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              className="bg-gray-700 border-gray-600 text-white"
+            />
+            <Input
+              type="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              className="bg-gray-700 border-gray-600 text-white"
+            />
           </div>
 
           <Button
             onClick={handleAuthSubmit}
-            disabled={loading || (authType === 'email' ? !formData.email || !formData.password : !formData.phone) || (mode === 'signup' && !formData.name)}
+            disabled={loading || !formData.email || !formData.password || (mode === 'signup' && !formData.name)}
             className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
           >
             {loading ? 'Processing...' : mode === 'signin' ? 'Sign In' : 'Sign Up'}
           </Button>
           
-          {authType === 'phone' && (
-            <p className="text-xs text-gray-400 text-center">
-              By continuing, you'll receive an SMS verification code. Message and data rates may apply.
-            </p>
-          )}
+          <p className="text-xs text-gray-400 text-center">
+            Phone authentication will be available once SMS provider is configured in Supabase.
+          </p>
         </CardContent>
       </Card>
     </div>
