@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Phone, MapPin, Wallet, History, User, Menu, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -267,13 +269,38 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Top-up Options */}
+            {/* Top-up Options with Accordion */}
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-white">Top-up Options</h3>
               
-              <TelebirrTopUp />
-              <BankTransferTopUp />
-              <CardPaymentTopUp />
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="telebirr" className="border-gray-700">
+                  <AccordionTrigger className="text-white hover:text-yellow-500 hover:no-underline">
+                    Telebirr Top-up
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <TelebirrTopUp />
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="bank-transfer" className="border-gray-700">
+                  <AccordionTrigger className="text-white hover:text-yellow-500 hover:no-underline">
+                    Bank Transfer
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <BankTransferTopUp />
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="card-payment" className="border-gray-700">
+                  <AccordionTrigger className="text-white hover:text-yellow-500 hover:no-underline">
+                    Card Payment
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <CardPaymentTopUp />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
 
             {/* Recent Transactions */}
