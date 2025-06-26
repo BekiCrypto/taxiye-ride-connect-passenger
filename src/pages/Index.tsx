@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Phone, MapPin, Wallet, History, User, Menu, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import EditProfilePage from '@/components/EditProfilePage';
 import SavedAddressesPage from '@/components/SavedAddressesPage';
 import NotificationsPage from '@/components/NotificationsPage';
 import HelpSupportPage from '@/components/HelpSupportPage';
+import TripHistoryPage from '@/components/TripHistoryPage';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import PaymentSelector from '@/components/payment/PaymentSelector';
 import TelebirrTopUp from '@/components/wallet/TelebirrTopUp';
@@ -163,6 +163,9 @@ const Index = () => {
   }
   if (currentPage === 'help-support') {
     return <HelpSupportPage onBack={() => setCurrentPage(null)} />;
+  }
+  if (currentPage === 'trip-history') {
+    return <TripHistoryPage onBack={() => setCurrentPage(null)} />;
   }
   if (currentPage === 'payment') {
     return (
@@ -335,69 +338,28 @@ const Index = () => {
       case 'trips':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white mb-6">Trip History</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Trips</h2>
+              <Button
+                onClick={() => setCurrentPage('trip-history')}
+                className="bg-yellow-500 hover:bg-yellow-600 text-black font-medium"
+              >
+                View All History
+              </Button>
+            </div>
             
-            <div className="space-y-4">
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <p className="text-white font-medium">Bole to CMC</p>
-                      <p className="text-gray-400 text-sm">Today, 2:30 PM</p>
-                    </div>
-                    <p className="text-yellow-500 font-bold">ETB 85.00</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span key={star} className="text-yellow-500">★</span>
-                      ))}
-                    </div>
-                    <span className="text-gray-400 text-sm">• Excellent service</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <p className="text-white font-medium">Home to Merkato</p>
-                      <p className="text-gray-400 text-sm">Yesterday, 10:15 AM</p>
-                    </div>
-                    <p className="text-yellow-500 font-bold">ETB 120.00</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex">
-                      {[1, 2, 3, 4].map((star) => (
-                        <span key={star} className="text-yellow-500">★</span>
-                      ))}
-                      <span className="text-gray-400">★</span>
-                    </div>
-                    <span className="text-gray-400 text-sm">• Good ride</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <p className="text-white font-medium">Airport to Hotel</p>
-                      <p className="text-gray-400 text-sm">2 days ago, 8:45 PM</p>
-                    </div>
-                    <p className="text-yellow-500 font-bold">ETB 200.00</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span key={star} className="text-yellow-500">★</span>
-                      ))}
-                    </div>
-                    <span className="text-gray-400 text-sm">• Perfect!</span>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="text-center py-12">
+              <History className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">Your Trips</h3>
+              <p className="text-gray-400 mb-6">
+                View your complete trip history with detailed information about each ride.
+              </p>
+              <Button
+                onClick={() => setCurrentPage('trip-history')}
+                className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-8 py-3"
+              >
+                View Trip History
+              </Button>
             </div>
           </div>
         );
