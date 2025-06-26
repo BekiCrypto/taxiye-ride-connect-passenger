@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Car, Truck, Bike } from 'lucide-react';
 
 interface VehicleType {
@@ -65,7 +64,6 @@ const vehicleTypes: VehicleType[] = [
 
 const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   selectedVehicle,
-  onVehicleChange,
   pickup,
   dropoff
 }) => {
@@ -73,10 +71,7 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   
   // Estimate distance (placeholder - in real app you'd calculate actual distance)
   const estimatedDistance = pickup && dropoff ? 8.5 : 0; // km
-  const estimatedFare = estimatedDistance > 0 
-    ? selectedVehicleInfo.basePrice + (selectedVehicleInfo.pricePerKm * estimatedDistance)
-    : 0;
-
+  
   const formatPrice = (basePrice: number, pricePerKm: number) => {
     if (estimatedDistance > 0) {
       const totalFare = basePrice + (pricePerKm * estimatedDistance);
@@ -98,34 +93,15 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               <p className="text-gray-400 text-sm">{selectedVehicleInfo.description}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="text-right">
             <p className="text-yellow-500 font-semibold">
               {formatPrice(selectedVehicleInfo.basePrice, selectedVehicleInfo.pricePerKm)}
             </p>
-            <Select value={selectedVehicle} onValueChange={onVehicleChange}>
-              <SelectTrigger className="w-32 bg-gray-700 border-gray-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-700 border-gray-600 z-50">
-                {vehicleTypes.map((vehicle) => (
-                  <SelectItem 
-                    key={vehicle.id} 
-                    value={vehicle.id}
-                    className="text-white hover:bg-gray-600 focus:bg-gray-600"
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center space-x-2">
-                        {vehicle.icon}
-                        <span>{vehicle.name}</span>
-                      </div>
-                      <span className="text-yellow-500 text-sm ml-4">
-                        {formatPrice(vehicle.basePrice, vehicle.pricePerKm)}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {estimatedDistance > 0 && (
+              <p className="text-gray-400 text-xs">
+                {estimatedDistance} km
+              </p>
+            )}
           </div>
         </div>
       </CardContent>
