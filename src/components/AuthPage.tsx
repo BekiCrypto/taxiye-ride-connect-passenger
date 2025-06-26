@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Phone, Mail, ArrowLeft, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 const AuthPage = ({ onBack }: { onBack: () => void }) => {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-  const [authType, setAuthType] = useState<'email' | 'phone'>('email');
   const [step, setStep] = useState<'input' | 'otp'>('input');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -53,57 +51,47 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
   const handleAuthSubmit = async () => {
     setLoading(true);
     try {
-      if (authType === 'email') {
-        if (mode === 'signup') {
-          // Use OTP-based signup instead of email confirmation
-          const { error } = await supabase.auth.signUp({
-            email: formData.email,
-            password: formData.password,
-            options: {
-              data: {
-                name: formData.name,
-                email: formData.email,
-                user_type: 'passenger' // Default to passenger for regular signups
-              },
-              emailRedirectTo: undefined // Don't use email redirect, use OTP instead
-            }
-          });
-          
-          if (error) throw error;
-          
-          toast({
-            title: "Verification Code Sent",
-            description: "We've sent a 6-digit code to your email. Please check your email and enter the code below.",
-          });
-          setStep('otp');
-        } else {
-          const { error } = await supabase.auth.signInWithPassword({
-            email: formData.email,
-            password: formData.password
-          });
-          
-          if (error) throw error;
-          
-          toast({
-            title: "Welcome back!",
-            description: "You've successfully signed in.",
-          });
-          onBack();
-        }
-      } else {
-        // Phone authentication - Show info about SMS setup
+      if (mode === 'signup') {
+        // Format phone number before storing
         const formattedPhone = formatPhoneNumber(formData.phone);
         console.log('Formatted phone number:', formattedPhone);
         
-        // For now, show a message that SMS is not configured
-        toast({
-          title: "SMS Authentication Not Available",
-          description: "Phone authentication requires SMS provider setup in Supabase. Please use email authentication instead.",
-          variant: "destructive",
+        // Use OTP-based signup for email verification
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          phone: formattedPhone,
+          options: {
+            data: {
+              name: formData.name,
+              email: formData.email,
+              phone: formattedPhone,
+              user_type: 'passenger' // Default to passenger for regular signups
+            }
+          }
         });
         
-        // Automatically switch to email mode
-        setAuthType('email');
+        if (error) throw error;
+        
+        toast({
+          title: "Verification Code Sent",
+          description: "We've sent a 6-digit verification code to your email. Please check your email and enter the code below.",
+        });
+        setStep('otp');
+      } else {
+        // Sign in flow
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Welcome back!",
+          description: "You've successfully signed in.",
+        });
+        onBack();
       }
     } catch (error: any) {
       console.error('Auth error:', error);
@@ -120,25 +108,14 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
   const handleOTPVerify = async () => {
     setLoading(true);
     try {
-      if (authType === 'phone') {
-        const formattedPhone = formatPhoneNumber(formData.phone);
-        const { error } = await supabase.auth.verifyOtp({
-          phone: formattedPhone,
-          token: formData.otp,
-          type: 'sms'
-        });
-        
-        if (error) throw error;
-      } else {
-        // Verify email OTP
-        const { error } = await supabase.auth.verifyOtp({
-          email: formData.email,
-          token: formData.otp,
-          type: 'email'
-        });
-        
-        if (error) throw error;
-      }
+      // Verify email OTP
+      const { error } = await supabase.auth.verifyOtp({
+        email: formData.email,
+        token: formData.otp,
+        type: 'signup'
+      });
+      
+      if (error) throw error;
       
       toast({
         title: "Account Verified Successfully!",
@@ -160,27 +137,18 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
   const handleResendCode = async () => {
     setLoading(true);
     try {
-      if (authType === 'email') {
-        // Resend email OTP
-        const { error } = await supabase.auth.resend({
-          type: 'signup',
-          email: formData.email
-        });
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Code Resent",
-          description: "A new verification code has been sent to your email.",
-        });
-      } else {
-        // Handle phone resend if needed
-        toast({
-          title: "SMS Not Available",
-          description: "Please use email authentication instead.",
-          variant: "destructive",
-        });
-      }
+      // Resend email OTP
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: formData.email
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Code Resent",
+        description: "A new verification code has been sent to your email.",
+      });
     } catch (error: any) {
       console.error('Resend error:', error);
       toast({
@@ -215,7 +183,7 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
             </div>
             <CardTitle className="text-white">Enter Verification Code</CardTitle>
             <p className="text-gray-400 text-sm">
-              We've sent a 6-digit code to {authType === 'email' ? formData.email : formatPhoneNumber(formData.phone)}
+              We've sent a 6-digit code to {formData.email}
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -308,26 +276,6 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
             </Button>
           </div>
 
-          {/* Auth Type Toggle - Email only for now */}
-          <div className="flex bg-gray-700 rounded-lg p-1">
-            <Button
-              variant="secondary"
-              className="flex-1 text-sm"
-            >
-              <Mail className="w-4 h-4 mr-2" />
-              Email
-            </Button>
-            <Button
-              variant="ghost"
-              disabled
-              className="flex-1 text-sm opacity-50"
-              title="SMS authentication requires setup in Supabase"
-            >
-              <Phone className="w-4 h-4 mr-2" />
-              Phone (Coming Soon)
-            </Button>
-          </div>
-
           <div className="space-y-4">
             {mode === 'signup' && (
               <Input
@@ -345,6 +293,17 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               className="bg-gray-700 border-gray-600 text-white"
             />
+
+            {mode === 'signup' && (
+              <Input
+                type="tel"
+                placeholder="Phone Number (e.g., +251912345678)"
+                value={formData.phone}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                className="bg-gray-700 border-gray-600 text-white"
+              />
+            )}
+
             <Input
               type="password"
               placeholder="Password"
@@ -356,7 +315,8 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
 
           <Button
             onClick={handleAuthSubmit}
-            disabled={loading || !formData.email || !formData.password || (mode === 'signup' && !formData.name)}
+            disabled={loading || !formData.email || !formData.password || 
+              (mode === 'signup' && (!formData.name || !formData.phone))}
             className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
           >
             {loading ? 'Processing...' : mode === 'signin' ? 'Sign In' : 'Sign Up'}
