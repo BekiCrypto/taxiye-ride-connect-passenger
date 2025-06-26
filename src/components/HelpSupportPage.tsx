@@ -50,8 +50,8 @@ const HelpSupportPage = ({ onBack }: { onBack: () => void }) => {
     {
       icon: Phone,
       title: 'Call Support',
-      description: '+251-911-000-000',
-      action: () => window.open('tel:+251911000000')
+      description: '6065',
+      action: () => window.open('tel:6065')
     },
     {
       icon: Mail,
@@ -61,12 +61,15 @@ const HelpSupportPage = ({ onBack }: { onBack: () => void }) => {
     },
     {
       icon: MessageCircle,
-      title: 'Live Chat',
-      description: 'Chat with our support team',
-      action: () => toast({
-        title: "Coming Soon",
-        description: "Live chat feature will be available soon.",
-      })
+      title: 'WhatsApp ChatBot',
+      description: 'Chat with our AI assistant - 6055',
+      action: () => window.open('https://wa.me/6055')
+    },
+    {
+      icon: MessageCircle,
+      title: 'Telegram ChatBot',
+      description: 'Chat with our AI assistant - 6055',
+      action: () => window.open('https://t.me/6055')
     }
   ];
 
