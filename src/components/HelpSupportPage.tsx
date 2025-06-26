@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Phone, Mail, MessageCircle, Send } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, MessageCircle, Send, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import FAQPage from './FAQPage';
 
 const HelpSupportPage = ({ onBack }: { onBack: () => void }) => {
   const [contactForm, setContactForm] = useState({
@@ -12,6 +13,7 @@ const HelpSupportPage = ({ onBack }: { onBack: () => void }) => {
     message: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showFAQ, setShowFAQ] = useState(false);
   const { toast } = useToast();
 
   const handleSubmitTicket = async () => {
@@ -73,6 +75,10 @@ const HelpSupportPage = ({ onBack }: { onBack: () => void }) => {
     }
   ];
 
+  if (showFAQ) {
+    return <FAQPage onBack={() => setShowFAQ(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 p-4">
       <div className="max-w-md mx-auto">
@@ -107,6 +113,19 @@ const HelpSupportPage = ({ onBack }: { onBack: () => void }) => {
               </Button>
             );
           })}
+          
+          {/* FAQ Button */}
+          <Button
+            onClick={() => setShowFAQ(true)}
+            className="w-full justify-start bg-gray-800 hover:bg-gray-700 text-white border-gray-700 h-auto p-4"
+            variant="outline"
+          >
+            <HelpCircle className="w-5 h-5 mr-3 text-yellow-500" />
+            <div className="text-left">
+              <p className="font-medium">Frequently Asked Questions</p>
+              <p className="text-sm text-gray-400">Find answers to common questions</p>
+            </div>
+          </Button>
         </div>
 
         {/* Support Ticket Form */}
@@ -141,65 +160,6 @@ const HelpSupportPage = ({ onBack }: { onBack: () => void }) => {
               <Send className="w-4 h-4 mr-2" />
               {loading ? 'Submitting...' : 'Submit Ticket'}
             </Button>
-          </CardContent>
-        </Card>
-
-        {/* FAQ Section */}
-        <Card className="bg-gray-800 border-gray-700 mt-6">
-          <CardHeader>
-            <CardTitle className="text-white">Frequently Asked Questions</CardTitle>
-          </CardHeader>
-          
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-white font-medium mb-1">How do I cancel a ride?</p>
-              <p className="text-gray-400 text-sm">You can cancel your ride from the trip screen before the driver arrives. Cancellation fees may apply if canceled after the driver has been assigned for more than 2 minutes.</p>
-            </div>
-            
-            <div>
-              <p className="text-white font-medium mb-1">How are fares calculated?</p>
-              <p className="text-gray-400 text-sm">Fares include a base rate plus distance and time charges. During peak hours or high demand, surge pricing may apply. You'll see the estimated fare before confirming your ride.</p>
-            </div>
-            
-            <div>
-              <p className="text-white font-medium mb-1">What payment methods are accepted?</p>
-              <p className="text-gray-400 text-sm">We accept cash payments, wallet balance top-ups, and mobile money (Telebirr, CBE Birr, M-Birr). You can add funds to your wallet through the app.</p>
-            </div>
-
-            <div>
-              <p className="text-white font-medium mb-1">How long does it take to find a driver?</p>
-              <p className="text-gray-400 text-sm">Typically 2-5 minutes depending on your location and time of day. During peak hours or in remote areas, it may take slightly longer.</p>
-            </div>
-
-            <div>
-              <p className="text-white font-medium mb-1">Can I schedule a ride in advance?</p>
-              <p className="text-gray-400 text-sm">Yes! You can schedule rides up to 7 days in advance. Go to the main screen and select "Schedule Ride" to set your pickup time and date.</p>
-            </div>
-
-            <div>
-              <p className="text-white font-medium mb-1">What if I left something in the vehicle?</p>
-              <p className="text-gray-400 text-sm">Contact support immediately at 6065 or through our chatbots. We'll help you get in touch with your driver to retrieve lost items.</p>
-            </div>
-
-            <div>
-              <p className="text-white font-medium mb-1">How do I rate my driver?</p>
-              <p className="text-gray-400 text-sm">After each ride, you'll be prompted to rate your experience from 1-5 stars and leave optional feedback. This helps us maintain service quality.</p>
-            </div>
-
-            <div>
-              <p className="text-white font-medium mb-1">Is it safe to ride with Taxiye?</p>
-              <p className="text-gray-400 text-sm">All drivers undergo background checks and vehicle inspections. You can share your trip details with contacts, and we monitor all rides for safety.</p>
-            </div>
-
-            <div>
-              <p className="text-white font-medium mb-1">How do I report an issue with my ride?</p>
-              <p className="text-gray-400 text-sm">You can report issues through the app after your ride, call support at 6065, or chat with our AI assistants on WhatsApp/Telegram at 6055.</p>
-            </div>
-
-            <div>
-              <p className="text-white font-medium mb-1">Can I request a specific driver?</p>
-              <p className="text-gray-400 text-sm">Currently, drivers are automatically matched based on proximity and availability. However, you can add drivers you've had good experiences with as favorites.</p>
-            </div>
           </CardContent>
         </Card>
       </div>
