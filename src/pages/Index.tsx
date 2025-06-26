@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Phone, MapPin, Wallet, History, User, Menu, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import BottomNavigation from '@/components/BottomNavigation';
-import RideRequestCard from '@/components/RideRequestCard';
 import LocationSelector from '@/components/LocationSelector';
 import MapView from '@/components/MapView';
 import VehicleSelector from '@/components/VehicleSelector';
@@ -24,7 +22,7 @@ const Index = () => {
   const [pickup, setPickup] = useState('');
   const [dropoff, setDropoff] = useState('');
   const [activeInput, setActiveInput] = useState<'pickup' | 'dropoff'>('pickup');
-  const [selectedVehicle, setSelectedVehicle] = useState('economy');
+  const [selectedVehicle, setSelectedVehicle] = useState('mini');
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
@@ -171,16 +169,13 @@ const Index = () => {
               onActiveInputChange={setActiveInput}
             />
 
-            {/* Vehicle Selection with Fares */}
+            {/* Vehicle Selection with Ride Request */}
             <VehicleSelector
               selectedVehicle={selectedVehicle}
               onVehicleChange={setSelectedVehicle}
               pickup={pickup}
               dropoff={dropoff}
             />
-
-            {/* Ride Request Card */}
-            <RideRequestCard pickup={pickup} dropoff={dropoff} />
           </div>
         );
       case 'wallet':
