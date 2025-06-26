@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 import AppFooter from '@/components/AppFooter';
+import { displayPhoneNumber } from '@/utils/phoneUtils';
 
 interface ProfileContentProps {
   session: Session | null;
@@ -96,6 +97,11 @@ const ProfileContent = ({ session, userProfile, onProfileAction }: ProfileConten
           <p className="text-gray-400 text-sm">
             {session ? userProfile?.email || 'No email' : 'Please sign in to access your profile'}
           </p>
+          {session && userProfile?.phone && (
+            <p className="text-gray-400 text-sm">
+              {displayPhoneNumber(userProfile.phone)}
+            </p>
+          )}
         </CardHeader>
         
         {session && (

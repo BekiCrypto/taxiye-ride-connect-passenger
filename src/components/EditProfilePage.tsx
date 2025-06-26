@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Save, Phone, Camera, Upload } from 'lucide-react';
+import { ArrowLeft, User, Save, Phone, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,8 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { formatPhoneNumber, validatePhoneNumber } from '@/utils/phoneUtils';
+import { uploadProfilePhoto, deleteProfilePhoto } from '@/utils/profilePhotoUtils';
 
 const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
   const [loading, setLoading] = useState(false);
@@ -49,7 +51,7 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
         });
         setOriginalPhone(phoneNumber);
         
-        // Load profile photo from user metadata
+        // Load profile photo from storage or user metadata
         if (user.user_metadata?.avatar_url) {
           setProfilePhoto(user.user_metadata.avatar_url);
         }
@@ -62,21 +64,11 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       toast({
-        title: "Invalid File",
-        description: "Please select an image file.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: "Please select an image smaller than 5MB.",
+        title: "Authentication Required",
+        description: "Please sign in to upload a profile photo.",
         variant: "destructive",
       });
       return;
@@ -84,54 +76,30 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
 
     setUploadingPhoto(true);
     try {
-      // Convert file to base64 for preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfilePhoto(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-
-      toast({
-        title: "Photo Selected",
-        description: "Photo will be saved when you update your profile.",
-      });
+      const result = await uploadProfilePhoto(file, user.id);
+      
+      if (result.success && result.url) {
+        setProfilePhoto(result.url);
+        toast({
+          title: "Photo Uploaded",
+          description: "Profile photo uploaded successfully.",
+        });
+      } else {
+        toast({
+          title: "Upload Failed",
+          description: result.error || "Failed to upload image. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Upload Failed",
-        description: error.message || "Failed to process image. Please try again.",
+        description: error.message || "Failed to upload image. Please try again.",
         variant: "destructive",
       });
     } finally {
       setUploadingPhoto(false);
     }
-  };
-
-  const formatPhoneNumber = (phone: string) => {
-    // Remove any non-digit characters
-    const cleanPhone = phone.replace(/\D/g, '');
-    
-    // If it starts with 0, replace with +251
-    if (cleanPhone.startsWith('0')) {
-      return '+251' + cleanPhone.substring(1);
-    }
-    
-    // If it starts with 251, add +
-    if (cleanPhone.startsWith('251')) {
-      return '+' + cleanPhone;
-    }
-    
-    // If it starts with +251, return as is
-    if (phone.startsWith('+251')) {
-      return phone;
-    }
-    
-    // If it's a 9-digit number (Ethiopian mobile), add +251
-    if (cleanPhone.length === 9) {
-      return '+251' + cleanPhone;
-    }
-    
-    // Otherwise, assume it needs +251 prefix
-    return '+251' + cleanPhone;
   };
 
   const handleSendOtp = async () => {
@@ -144,13 +112,21 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
       return;
     }
 
+    if (!validatePhoneNumber(formData.phone)) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid Ethiopian phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const formattedPhone = formatPhoneNumber(formData.phone);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Send OTP to both email and phone
       // Send email OTP
       const { error: emailError } = await supabase.auth.signInWithOtp({
         email: user.email!,
@@ -252,9 +228,7 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
           .maybeSingle();
 
         if (passengerData) {
-          // If passenger exists, update with new phone as primary key
           if (originalPhone) {
-            // Update existing record
             const { error: passengerError } = await supabase
               .from('passengers')
               .update({ 
@@ -265,7 +239,6 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
 
             if (passengerError) throw passengerError;
           } else {
-            // Insert new record with phone
             const { error: insertError } = await supabase
               .from('passengers')
               .insert({
