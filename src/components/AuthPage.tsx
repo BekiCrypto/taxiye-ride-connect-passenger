@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Phone, Mail, ArrowLeft, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,34 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
     otp: ''
   });
   const { toast } = useToast();
+
+  const formatPhoneNumber = (phone: string) => {
+    // Remove any non-digit characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // If it starts with 0, replace with +251
+    if (cleanPhone.startsWith('0')) {
+      return '+251' + cleanPhone.substring(1);
+    }
+    
+    // If it starts with 251, add +
+    if (cleanPhone.startsWith('251')) {
+      return '+' + cleanPhone;
+    }
+    
+    // If it starts with +251, return as is
+    if (phone.startsWith('+251')) {
+      return phone;
+    }
+    
+    // If it's a 9-digit number (Ethiopian mobile), add +251
+    if (cleanPhone.length === 9) {
+      return '+251' + cleanPhone;
+    }
+    
+    // Otherwise, assume it needs +251 prefix
+    return '+251' + cleanPhone;
+  };
 
   const handleAuthSubmit = async () => {
     setLoading(true);
@@ -61,10 +88,13 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
         }
       } else {
         // Phone authentication
+        const formattedPhone = formatPhoneNumber(formData.phone);
+        console.log('Formatted phone number:', formattedPhone);
+        
         const { error } = await supabase.auth.signInWithOtp({
-          phone: formData.phone,
+          phone: formattedPhone,
           options: {
-            data: mode === 'signup' ? { name: formData.name } : undefined
+            data: mode === 'signup' ? { name: formData.name, phone: formattedPhone } : { phone: formattedPhone }
           }
         });
         
@@ -77,6 +107,7 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
         setStep('otp');
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
         title: "Authentication Error",
         description: error.message || "Something went wrong. Please try again.",
@@ -91,8 +122,9 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
     setLoading(true);
     try {
       if (authType === 'phone') {
+        const formattedPhone = formatPhoneNumber(formData.phone);
         const { error } = await supabase.auth.verifyOtp({
-          phone: formData.phone,
+          phone: formattedPhone,
           token: formData.otp,
           type: 'sms'
         });
@@ -114,6 +146,7 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
       });
       onBack();
     } catch (error: any) {
+      console.error('OTP verification error:', error);
       toast({
         title: "Verification Failed",
         description: error.message || "Invalid OTP. Please try again.",
@@ -122,6 +155,10 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setFormData(prev => ({ ...prev, phone: value }));
   };
 
   if (step === 'otp') {
@@ -142,7 +179,7 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
             </div>
             <CardTitle className="text-white">Enter Verification Code</CardTitle>
             <p className="text-gray-400 text-sm">
-              We've sent a code to {authType === 'email' ? formData.email : formData.phone}
+              We've sent a code to {authType === 'email' ? formData.email : formatPhoneNumber(formData.phone)}
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -279,13 +316,18 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
                 />
               </>
             ) : (
-              <Input
-                type="tel"
-                placeholder="Phone Number (+251...)"
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                className="bg-gray-700 border-gray-600 text-white"
-              />
+              <div>
+                <Input
+                  type="tel"
+                  placeholder="Phone Number (e.g., 0911300466 or +251911300466)"
+                  value={formData.phone}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Ethiopian format: 0911300466 or +251911300466
+                </p>
+              </div>
             )}
           </div>
 
