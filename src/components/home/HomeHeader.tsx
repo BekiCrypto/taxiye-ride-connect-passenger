@@ -16,6 +16,11 @@ interface HomeHeaderProps {
 }
 
 const HomeHeader = ({ session, userProfile, isRideInProgress, rideData }: HomeHeaderProps) => {
+  const getUserName = () => {
+    if (!session) return 'Guest';
+    return userProfile?.name || session.user?.user_metadata?.name || 'User';
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -29,7 +34,7 @@ const HomeHeader = ({ session, userProfile, isRideInProgress, rideData }: HomeHe
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">
-              {isRideInProgress ? 'Ride in Progress' : `Hello, ${session ? userProfile?.name || 'User' : 'Guest'}!`}
+              {isRideInProgress ? 'Ride in Progress' : `Hello, ${getUserName()}!`}
             </h1>
             <p className="text-yellow-500 text-sm font-medium">
               {isRideInProgress ? 'Enjoy your ride' : 'Always moving!'}
@@ -40,8 +45,6 @@ const HomeHeader = ({ session, userProfile, isRideInProgress, rideData }: HomeHe
           <Bell className="w-5 h-5" />
         </Button>
       </div>
-      
-      {/* Remove the motto banner */}
     </div>
   );
 };

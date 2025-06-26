@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,11 @@ interface ProfileContentProps {
 }
 
 const ProfileContent = ({ session, userProfile, onProfileAction }: ProfileContentProps) => {
+  const getUserName = () => {
+    if (!session) return 'Guest User';
+    return userProfile?.name || session.user?.user_metadata?.name || 'User';
+  };
+
   const profileMenuItems = [
     { 
       icon: User, 
@@ -105,10 +111,10 @@ const ProfileContent = ({ session, userProfile, onProfileAction }: ProfileConten
             )}
           </Avatar>
           <CardTitle className="text-white">
-            {session ? userProfile?.name || 'User' : 'Guest User'}
+            {getUserName()}
           </CardTitle>
           <p className="text-gray-400 text-sm">
-            {session ? userProfile?.email || 'No email' : 'Please sign in to access your profile'}
+            {session ? userProfile?.email || session.user?.email || 'No email' : 'Please sign in to access your profile'}
           </p>
           {session && userProfile?.phone && (
             <p className="text-gray-400 text-sm">
