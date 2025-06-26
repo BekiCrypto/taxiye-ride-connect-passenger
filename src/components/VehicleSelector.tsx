@@ -8,13 +8,16 @@ interface VehicleType {
   id: string;
   name: string;
   description: string;
-  price: string;
+  basePrice: number;
+  pricePerKm: number;
   icon: React.ReactNode;
 }
 
 interface VehicleSelectorProps {
   selectedVehicle: string;
   onVehicleChange: (vehicleId: string) => void;
+  pickup?: string;
+  dropoff?: string;
 }
 
 const vehicleTypes: VehicleType[] = [
@@ -22,44 +25,65 @@ const vehicleTypes: VehicleType[] = [
     id: 'economy',
     name: 'Economy',
     description: 'Affordable rides',
-    price: 'ETB 15/km',
+    basePrice: 25,
+    pricePerKm: 15,
     icon: <Car className="w-4 h-4" />
   },
   {
     id: 'comfort',
     name: 'Comfort',
     description: 'More space & comfort',
-    price: 'ETB 25/km',
+    basePrice: 35,
+    pricePerKm: 25,
     icon: <Car className="w-4 h-4" />
   },
   {
     id: 'premium',
     name: 'Premium',
     description: 'High-end vehicles',
-    price: 'ETB 40/km',
+    basePrice: 50,
+    pricePerKm: 40,
     icon: <Car className="w-4 h-4" />
   },
   {
     id: 'delivery',
     name: 'Delivery',
     description: 'For packages',
-    price: 'ETB 12/km',
+    basePrice: 20,
+    pricePerKm: 12,
     icon: <Truck className="w-4 h-4" />
   },
   {
     id: 'bike',
     name: 'Bike',
     description: 'Quick & eco-friendly',
-    price: 'ETB 8/km',
+    basePrice: 15,
+    pricePerKm: 8,
     icon: <Bike className="w-4 h-4" />
   }
 ];
 
 const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   selectedVehicle,
-  onVehicleChange
+  onVehicleChange,
+  pickup,
+  dropoff
 }) => {
   const selectedVehicleInfo = vehicleTypes.find(v => v.id === selectedVehicle) || vehicleTypes[0];
+  
+  // Estimate distance (placeholder - in real app you'd calculate actual distance)
+  const estimatedDistance = pickup && dropoff ? 8.5 : 0; // km
+  const estimatedFare = estimatedDistance > 0 
+    ? selectedVehicleInfo.basePrice + (selectedVehicleInfo.pricePerKm * estimatedDistance)
+    : 0;
+
+  const formatPrice = (basePrice: number, pricePerKm: number) => {
+    if (estimatedDistance > 0) {
+      const totalFare = basePrice + (pricePerKm * estimatedDistance);
+      return `ETB ${Math.round(totalFare)}`;
+    }
+    return `ETB ${pricePerKm}/km`;
+  };
 
   return (
     <Card className="bg-gray-800 border-gray-700">
@@ -75,7 +99,9 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <p className="text-yellow-500 font-semibold">{selectedVehicleInfo.price}</p>
+            <p className="text-yellow-500 font-semibold">
+              {formatPrice(selectedVehicleInfo.basePrice, selectedVehicleInfo.pricePerKm)}
+            </p>
             <Select value={selectedVehicle} onValueChange={onVehicleChange}>
               <SelectTrigger className="w-32 bg-gray-700 border-gray-600 text-white">
                 <SelectValue />
@@ -87,9 +113,14 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
                     value={vehicle.id}
                     className="text-white hover:bg-gray-600 focus:bg-gray-600"
                   >
-                    <div className="flex items-center space-x-2">
-                      {vehicle.icon}
-                      <span>{vehicle.name}</span>
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center space-x-2">
+                        {vehicle.icon}
+                        <span>{vehicle.name}</span>
+                      </div>
+                      <span className="text-yellow-500 text-sm ml-4">
+                        {formatPrice(vehicle.basePrice, vehicle.pricePerKm)}
+                      </span>
                     </div>
                   </SelectItem>
                 ))}

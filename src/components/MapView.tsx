@@ -1,8 +1,7 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Navigation, MapPin } from 'lucide-react';
+import { Navigation, ArrowUpDown } from 'lucide-react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 
 interface MapViewProps {
@@ -222,6 +221,16 @@ const MapView: React.FC<MapViewProps> = ({
     }
   };
 
+  const handleToggleInput = () => {
+    onActiveInputChange(activeInput === 'pickup' ? 'dropoff' : 'pickup');
+  };
+
+  const handleSwapLocations = () => {
+    const tempPickup = pickup;
+    onPickupChange(dropoff);
+    onDropoffChange(tempPickup);
+  };
+
   if (error) {
     return (
       <Card className="bg-gray-800 border-gray-700 h-64 flex items-center justify-center">
@@ -243,34 +252,34 @@ const MapView: React.FC<MapViewProps> = ({
       <div className="relative">
         <div ref={mapRef} className="w-full h-64" />
         
-        {/* Location Toggle Buttons */}
-        <div className="absolute top-4 left-4 flex space-x-2">
+        {/* Map Controls Overlay */}
+        <div className="absolute top-4 left-4 flex flex-col space-y-2">
+          {/* Toggle Active Input */}
           <Button
             size="sm"
-            variant={activeInput === 'pickup' ? 'default' : 'secondary'}
-            onClick={() => onActiveInputChange('pickup')}
+            onClick={handleToggleInput}
             className={`${
               activeInput === 'pickup' 
                 ? 'bg-green-500 hover:bg-green-600 text-white' 
-                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                : 'bg-red-500 hover:bg-red-600 text-white'
             }`}
           >
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-            Pickup
+            <div className={`w-2 h-2 rounded-full mr-2 ${
+              activeInput === 'pickup' ? 'bg-white' : 'bg-white'
+            }`} />
+            {activeInput === 'pickup' ? 'Set Pickup' : 'Set Destination'}
           </Button>
-          <Button
-            size="sm"
-            variant={activeInput === 'dropoff' ? 'default' : 'secondary'}
-            onClick={() => onActiveInputChange('dropoff')}
-            className={`${
-              activeInput === 'dropoff' 
-                ? 'bg-red-500 hover:bg-red-600 text-white' 
-                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-            }`}
-          >
-            <div className="w-2 h-2 bg-red-500 rounded-full mr-2" />
-            Destination
-          </Button>
+
+          {/* Swap Locations */}
+          {pickup && dropoff && (
+            <Button
+              size="sm"
+              onClick={handleSwapLocations}
+              className="bg-gray-700 hover:bg-gray-600 text-white"
+            >
+              <ArrowUpDown className="w-4 h-4" />
+            </Button>
+          )}
         </div>
 
         {/* Current Location Button */}
@@ -285,7 +294,7 @@ const MapView: React.FC<MapViewProps> = ({
 
         {/* Instructions */}
         <div className="absolute bottom-4 left-4 bg-black/70 text-white text-xs px-2 py-1 rounded">
-          Tap map to set {activeInput === 'pickup' ? 'pickup' : 'destination'} location
+          Tap map to set {activeInput === 'pickup' ? 'pickup' : 'destination'}
         </div>
       </div>
     </Card>

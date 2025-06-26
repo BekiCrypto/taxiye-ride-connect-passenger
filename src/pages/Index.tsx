@@ -161,7 +161,7 @@ const Index = () => {
               onActiveInputChange={setActiveInput}
             />
 
-            {/* Location Selection */}
+            {/* Compact Location Selection */}
             <LocationSelector
               pickup={pickup}
               dropoff={dropoff}
@@ -171,10 +171,12 @@ const Index = () => {
               onActiveInputChange={setActiveInput}
             />
 
-            {/* Vehicle Selection */}
+            {/* Vehicle Selection with Fares */}
             <VehicleSelector
               selectedVehicle={selectedVehicle}
               onVehicleChange={setSelectedVehicle}
+              pickup={pickup}
+              dropoff={dropoff}
             />
 
             {/* Ride Request Card */}
