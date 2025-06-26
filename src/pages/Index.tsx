@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Phone, MapPin, Wallet, History, User, Menu, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import EditProfilePage from '@/components/EditProfilePage';
 import SavedAddressesPage from '@/components/SavedAddressesPage';
 import NotificationsPage from '@/components/NotificationsPage';
 import HelpSupportPage from '@/components/HelpSupportPage';
+import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -23,6 +23,9 @@ const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
+  
+  // Initialize Google Maps
+  const { isLoaded: mapsLoaded, error: mapsError } = useGoogleMaps();
 
   useEffect(() => {
     // Set up auth state listener
