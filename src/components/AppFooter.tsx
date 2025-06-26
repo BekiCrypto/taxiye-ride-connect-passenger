@@ -12,9 +12,9 @@ const AppFooter = () => {
             className="w-full h-full object-contain"
           />
         </div>
-        <span className="text-yellow-500 font-medium text-sm">Always moving!</span>
+        <span className="text-yellow-500 font-medium text-sm">Taxiye</span>
       </div>
-      <p className="text-gray-400 text-xs">Copyright © Taxiye — Always moving!</p>
+      <p className="text-gray-400 text-xs">Copyright © Taxiye</p>
       <p className="text-gray-500 text-xs mt-1">Developed by Elnet Technologies PLC</p>
     </div>
   );

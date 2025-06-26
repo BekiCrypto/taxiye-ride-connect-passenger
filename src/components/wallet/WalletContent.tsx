@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,7 +70,6 @@ const WalletContent = () => {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Wallet</h1>
-            <p className="text-yellow-500 text-sm font-medium">Always moving!</p>
           </div>
         </div>
       </div>

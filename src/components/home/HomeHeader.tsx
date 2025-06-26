@@ -31,8 +31,8 @@ const HomeHeader = ({ session, userProfile, isRideInProgress, rideData }: HomeHe
             <h1 className="text-xl font-bold text-white">
               {isRideInProgress ? 'Ride in Progress' : `Hello, ${session ? userProfile?.name || 'User' : 'Guest'}!`}
             </h1>
-            <p className="text-gray-400 text-sm">
-              {isRideInProgress ? 'Enjoy your ride' : 'Where to today?'}
+            <p className="text-yellow-500 text-sm font-medium">
+              {isRideInProgress ? 'Enjoy your ride' : 'Always moving!'}
             </p>
           </div>
         </div>
@@ -41,10 +41,7 @@ const HomeHeader = ({ session, userProfile, isRideInProgress, rideData }: HomeHe
         </Button>
       </div>
       
-      {/* Motto Banner */}
-      <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg p-3 text-center">
-        <p className="text-black font-semibold text-sm">Always moving!</p>
-      </div>
+      {/* Remove the motto banner */}
     </div>
   );
 };
