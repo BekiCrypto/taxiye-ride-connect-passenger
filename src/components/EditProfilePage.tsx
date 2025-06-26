@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Save, Phone } from 'lucide-react';
+import { ArrowLeft, User, Save, Phone, Camera, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -11,6 +12,8 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
   const [loading, setLoading] = useState(false);
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -45,10 +48,63 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
           phone: phoneNumber
         });
         setOriginalPhone(phoneNumber);
+        
+        // Load profile photo from user metadata
+        if (user.user_metadata?.avatar_url) {
+          setProfilePhoto(user.user_metadata.avatar_url);
+        }
       }
     };
     loadUserData();
   }, []);
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      // Convert file to base64 for preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfilePhoto(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      toast({
+        title: "Photo Selected",
+        description: "Photo will be saved when you update your profile.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to process image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const formatPhoneNumber = (phone: string) => {
     // Remove any non-digit characters
@@ -177,11 +233,12 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
       if (verified) {
         const formattedPhone = formatPhoneNumber(formData.phone);
 
-        // Update user auth data
+        // Update user auth data including profile photo
         const { error: authError } = await supabase.auth.updateUser({
           phone: formattedPhone,
           data: {
-            name: formData.name
+            name: formData.name,
+            avatar_url: profilePhoto
           }
         });
 
@@ -272,16 +329,17 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
       return;
     }
 
-    // Regular profile update (name only)
+    // Regular profile update (name and photo)
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Update auth user metadata
+      // Update auth user metadata including profile photo
       const { error: authError } = await supabase.auth.updateUser({
         data: {
-          name: formData.name
+          name: formData.name,
+          avatar_url: profilePhoto
         }
       });
 
@@ -424,10 +482,41 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
 
         <Card className="bg-gray-800 border-gray-700">
           <CardHeader className="text-center">
-            <div className="w-20 h-20 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <User className="w-10 h-10 text-black" />
+            {/* Profile Photo Section */}
+            <div className="relative mx-auto mb-4">
+              <Avatar className="w-20 h-20 mx-auto">
+                {profilePhoto ? (
+                  <AvatarImage src={profilePhoto} alt="Profile" />
+                ) : (
+                  <AvatarFallback className="bg-yellow-500 text-black text-xl">
+                    <User className="w-10 h-10" />
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              
+              {/* Photo Upload Button */}
+              <div className="absolute -bottom-2 -right-2">
+                <label
+                  htmlFor="photo-upload"
+                  className="inline-flex items-center justify-center w-8 h-8 bg-yellow-500 hover:bg-yellow-600 rounded-full cursor-pointer transition-colors"
+                >
+                  <Camera className="w-4 h-4 text-black" />
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    disabled={uploadingPhoto}
+                  />
+                </label>
+              </div>
             </div>
+            
             <CardTitle className="text-white">Profile Information</CardTitle>
+            <p className="text-gray-400 text-xs">
+              Click the camera icon to upload a profile photo
+            </p>
           </CardHeader>
           
           <CardContent className="space-y-4">
@@ -475,11 +564,11 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
             
             <Button
               onClick={handleSaveProfile}
-              disabled={loading || !formData.name.trim()}
+              disabled={loading || !formData.name.trim() || uploadingPhoto}
               className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
             >
               <Save className="w-4 h-4 mr-2" />
-              {loading ? 'Processing...' : (formData.phone !== originalPhone && formData.phone.trim() ? 'Verify Phone & Save' : 'Save Changes')}
+              {loading ? 'Processing...' : uploadingPhoto ? 'Processing Photo...' : (formData.phone !== originalPhone && formData.phone.trim() ? 'Verify Phone & Save' : 'Save Changes')}
             </Button>
           </CardContent>
         </Card>

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   User, 
   MapPin, 
@@ -77,9 +78,18 @@ const ProfileContent = ({ session, userProfile, onProfileAction }: ProfileConten
       {/* User Info Card */}
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader className="text-center pb-2">
-          <div className="w-20 h-20 bg-gray-700 rounded-full mx-auto flex items-center justify-center mb-4">
-            <User className="w-10 h-10 text-gray-400" />
-          </div>
+          <Avatar className="w-20 h-20 mx-auto mb-4">
+            {session?.user?.user_metadata?.avatar_url ? (
+              <AvatarImage 
+                src={session.user.user_metadata.avatar_url} 
+                alt="Profile Photo" 
+              />
+            ) : (
+              <AvatarFallback className="bg-gray-700 text-gray-400">
+                <User className="w-10 h-10" />
+              </AvatarFallback>
+            )}
+          </Avatar>
           <CardTitle className="text-white">
             {session ? userProfile?.name || 'User' : 'Guest User'}
           </CardTitle>
