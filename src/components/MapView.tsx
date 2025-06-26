@@ -38,12 +38,14 @@ const MapView: React.FC<MapViewProps> = ({
             lat: position.coords.latitude,
             lng: position.coords.longitude
           };
+          console.log('Current location obtained:', location);
           setCurrentLocation(location);
           
           // Set pickup to current location if empty
-          if (!pickup) {
+          if (!pickup && isLoaded) {
             reverseGeocode(location).then((address) => {
               if (address) {
+                console.log('Setting pickup to current location:', address);
                 onPickupChange(address);
               }
             });
@@ -51,72 +53,89 @@ const MapView: React.FC<MapViewProps> = ({
         },
         (error) => {
           console.error('Error getting current location:', error);
+          // Set default location to Addis Ababa if geolocation fails
+          const defaultLocation = { lat: 9.0320, lng: 38.7469 };
+          setCurrentLocation(defaultLocation);
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
       );
     }
-  }, [pickup, onPickupChange]);
+  }, [pickup, onPickupChange, isLoaded]);
 
   // Initialize map
   useEffect(() => {
-    if (isLoaded && mapRef.current && !mapInstanceRef.current) {
+    if (isLoaded && mapRef.current && !mapInstanceRef.current && window.google) {
       const defaultCenter = currentLocation || { lat: 9.0320, lng: 38.7469 }; // Addis Ababa
       
-      mapInstanceRef.current = new google.maps.Map(mapRef.current, {
-        center: defaultCenter,
-        zoom: 15,
-        styles: [
-          {
-            "featureType": "all",
-            "elementType": "geometry.fill",
-            "stylers": [{"color": "#1f2937"}]
-          },
-          {
-            "featureType": "road",
-            "elementType": "geometry",
-            "stylers": [{"color": "#374151"}]
-          },
-          {
-            "featureType": "water",
-            "elementType": "geometry",
-            "stylers": [{"color": "#111827"}]
-          }
-        ]
-      });
-
-      // Add click listener to map
-      mapInstanceRef.current.addListener('click', (event: google.maps.MapMouseEvent) => {
-        if (event.latLng) {
-          const location = {
-            lat: event.latLng.lat(),
-            lng: event.latLng.lng()
-          };
-          
-          reverseGeocode(location).then((address) => {
-            if (address) {
-              if (activeInput === 'pickup') {
-                onPickupChange(address);
-              } else {
-                onDropoffChange(address);
-              }
+      console.log('Initializing Google Map at:', defaultCenter);
+      
+      try {
+        mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+          center: defaultCenter,
+          zoom: 15,
+          styles: [
+            {
+              "featureType": "all",
+              "elementType": "geometry.fill",
+              "stylers": [{"color": "#1f2937"}]
+            },
+            {
+              "featureType": "road",
+              "elementType": "geometry",
+              "stylers": [{"color": "#374151"}]
+            },
+            {
+              "featureType": "water",
+              "elementType": "geometry",
+              "stylers": [{"color": "#111827"}]
             }
-          });
-        }
-      });
+          ]
+        });
+
+        // Add click listener to map
+        mapInstanceRef.current.addListener('click', (event: google.maps.MapMouseEvent) => {
+          if (event.latLng) {
+            const location = {
+              lat: event.latLng.lat(),
+              lng: event.latLng.lng()
+            };
+            
+            console.log('Map clicked at:', location);
+            
+            reverseGeocode(location).then((address) => {
+              if (address) {
+                if (activeInput === 'pickup') {
+                  onPickupChange(address);
+                } else {
+                  onDropoffChange(address);
+                }
+              }
+            });
+          }
+        });
+        
+        console.log('Google Map initialized successfully');
+      } catch (error) {
+        console.error('Error initializing Google Map:', error);
+      }
     }
   }, [isLoaded, currentLocation, activeInput, onPickupChange, onDropoffChange]);
 
   // Reverse geocode function
   const reverseGeocode = async (location: { lat: number; lng: number }): Promise<string | null> => {
-    if (!window.google) return null;
+    if (!window.google) {
+      console.error('Google Maps not loaded');
+      return null;
+    }
     
-    const geocoder = new google.maps.Geocoder();
+    const geocoder = new window.google.maps.Geocoder();
     
     return new Promise((resolve) => {
       geocoder.geocode({ location }, (results, status) => {
         if (status === 'OK' && results && results[0]) {
           resolve(results[0].formatted_address);
         } else {
+          console.error('Geocoding failed:', status);
           resolve(null);
         }
       });
@@ -125,7 +144,7 @@ const MapView: React.FC<MapViewProps> = ({
 
   // Update markers when locations change
   useEffect(() => {
-    if (!mapInstanceRef.current || !isLoaded) return;
+    if (!mapInstanceRef.current || !isLoaded || !window.google) return;
 
     // Handle pickup marker
     if (pickup && currentLocation) {
@@ -133,12 +152,12 @@ const MapView: React.FC<MapViewProps> = ({
         pickupMarkerRef.current.setMap(null);
       }
       
-      pickupMarkerRef.current = new google.maps.Marker({
+      pickupMarkerRef.current = new window.google.maps.Marker({
         position: currentLocation,
         map: mapInstanceRef.current,
         title: 'Pickup Location',
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
+          path: window.google.maps.SymbolPath.CIRCLE,
           fillColor: '#10b981',
           fillOpacity: 1,
           strokeColor: '#ffffff',
@@ -158,12 +177,12 @@ const MapView: React.FC<MapViewProps> = ({
         dropoffMarkerRef.current.setMap(null);
       }
       
-      dropoffMarkerRef.current = new google.maps.Marker({
+      dropoffMarkerRef.current = new window.google.maps.Marker({
         position: dropoffLocation,
         map: mapInstanceRef.current,
         title: 'Dropoff Location',
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
+          path: window.google.maps.SymbolPath.CIRCLE,
           fillColor: '#ef4444',
           fillOpacity: 1,
           strokeColor: '#ffffff',
@@ -198,7 +217,7 @@ const MapView: React.FC<MapViewProps> = ({
         (error) => {
           console.error('Error getting current location:', error);
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
       );
     }
   };
@@ -207,6 +226,14 @@ const MapView: React.FC<MapViewProps> = ({
     return (
       <Card className="bg-gray-800 border-gray-700 h-64 flex items-center justify-center">
         <p className="text-gray-400">Map service unavailable</p>
+      </Card>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <Card className="bg-gray-800 border-gray-700 h-64 flex items-center justify-center">
+        <p className="text-gray-400">Loading map...</p>
       </Card>
     );
   }

@@ -66,7 +66,9 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {selectedVehicleInfo.icon}
+            <div className="text-yellow-500">
+              {selectedVehicleInfo.icon}
+            </div>
             <div>
               <p className="text-white font-medium">{selectedVehicleInfo.name}</p>
               <p className="text-gray-400 text-sm">{selectedVehicleInfo.description}</p>
@@ -78,12 +80,12 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
               <SelectTrigger className="w-32 bg-gray-700 border-gray-600 text-white">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-gray-700 border-gray-600">
+              <SelectContent className="bg-gray-700 border-gray-600 z-50">
                 {vehicleTypes.map((vehicle) => (
                   <SelectItem 
                     key={vehicle.id} 
                     value={vehicle.id}
-                    className="text-white hover:bg-gray-600"
+                    className="text-white hover:bg-gray-600 focus:bg-gray-600"
                   >
                     <div className="flex items-center space-x-2">
                       {vehicle.icon}
