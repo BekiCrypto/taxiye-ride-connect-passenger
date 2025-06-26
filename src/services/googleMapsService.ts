@@ -1,4 +1,6 @@
 
+/// <reference types="google.maps" />
+
 export interface PlaceAutocomplete {
   place_id: string;
   description: string;
@@ -18,6 +20,12 @@ export interface PlaceDetails {
     };
   };
   name: string;
+}
+
+declare global {
+  interface Window {
+    google: typeof google;
+  }
 }
 
 class GoogleMapsService {
