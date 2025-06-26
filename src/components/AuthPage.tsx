@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Phone, Mail, ArrowLeft, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -56,8 +57,8 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
         const formattedPhone = formatPhoneNumber(formData.phone);
         console.log('Formatted phone number:', formattedPhone);
         
-        // Use OTP-based signup for email verification
-        const { error } = await supabase.auth.signUp({
+        // Use Supabase's built-in email OTP signup
+        const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           phone: formattedPhone,
@@ -66,18 +67,28 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
               name: formData.name,
               email: formData.email,
               phone: formattedPhone,
-              user_type: 'passenger' // Default to passenger for regular signups
-            }
+              user_type: 'passenger'
+            },
+            emailRedirectTo: undefined // Prevent email link, force OTP only
           }
         });
         
         if (error) throw error;
         
-        toast({
-          title: "Verification Code Sent",
-          description: "We've sent a 6-digit verification code to your email. Please check your email and enter the code below.",
-        });
-        setStep('otp');
+        // Check if user needs email confirmation
+        if (data.user && !data.user.email_confirmed_at) {
+          toast({
+            title: "Verification Required",
+            description: "Please check your email for the 6-digit verification code.",
+          });
+          setStep('otp');
+        } else {
+          toast({
+            title: "Account Created",
+            description: "Your account has been created successfully!",
+          });
+          onBack();
+        }
       } else {
         // Sign in flow
         const { error } = await supabase.auth.signInWithPassword({
@@ -108,11 +119,11 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
   const handleOTPVerify = async () => {
     setLoading(true);
     try {
-      // Verify email OTP
-      const { error } = await supabase.auth.verifyOtp({
+      // Verify email OTP using Supabase's built-in system
+      const { data, error } = await supabase.auth.verifyOtp({
         email: formData.email,
         token: formData.otp,
-        type: 'signup'
+        type: 'email'
       });
       
       if (error) throw error;
@@ -327,10 +338,6 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
               After signing up, you'll receive a 6-digit verification code via email to activate your account.
             </p>
           )}
-          
-          <p className="text-xs text-gray-400 text-center">
-            Phone authentication will be available once SMS provider is configured in Supabase.
-          </p>
         </CardContent>
       </Card>
     </div>

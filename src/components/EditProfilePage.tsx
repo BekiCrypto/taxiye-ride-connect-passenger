@@ -92,31 +92,71 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
     try {
       const formattedPhone = formatPhoneNumber(formData.phone);
       
-      // For now, we'll send OTP to email since SMS is not configured
-      // In a real implementation, you would send SMS OTP here
+      // Send OTP to email using Supabase's built-in system
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Generate a simple OTP for demonstration (in production, use proper OTP service)
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      
-      // Store OTP in user metadata temporarily (in production, use proper storage)
-      await supabase.auth.updateUser({
-        data: { temp_phone_otp: otp, temp_phone_number: formattedPhone }
+      // Use Supabase's email OTP for phone verification
+      const { error } = await supabase.auth.updateUser({
+        phone: formattedPhone
       });
 
-      toast({
-        title: "OTP Sent",
-        description: `Verification code sent to your email. Use code: ${otp} (Demo mode)`,
-      });
+      if (error) {
+        // If phone update fails due to existing phone, send email OTP instead
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: user.email!,
+          options: {
+            shouldCreateUser: false
+          }
+        });
+
+        if (otpError) throw otpError;
+
+        toast({
+          title: "Verification Code Sent",
+          description: "We've sent a 6-digit code to your email to verify this phone number change.",
+        });
+      } else {
+        toast({
+          title: "Phone Updated",
+          description: "Your phone number has been updated successfully.",
+        });
+        setOriginalPhone(formattedPhone);
+        setFormData(prev => ({ ...prev, phone: formattedPhone }));
+        return;
+      }
       
       setShowOtpVerification(true);
     } catch (error: any) {
-      toast({
-        title: "Failed to Send OTP",
-        description: error.message || "Could not send verification code. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Phone update error:', error);
+      
+      // Send email OTP as fallback
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          const { error: otpError } = await supabase.auth.signInWithOtp({
+            email: user.email,
+            options: {
+              shouldCreateUser: false
+            }
+          });
+
+          if (otpError) throw otpError;
+
+          toast({
+            title: "Verification Required",
+            description: "We've sent a 6-digit code to your email to verify this phone number change.",
+          });
+          
+          setShowOtpVerification(true);
+        }
+      } catch (fallbackError: any) {
+        toast({
+          title: "Failed to Send Verification",
+          description: fallbackError.message || "Could not send verification code. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -137,21 +177,22 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Verify OTP (in production, verify against proper OTP service)
-      const storedOtp = user.user_metadata?.temp_phone_otp;
-      const tempPhone = user.user_metadata?.temp_phone_number;
-      
-      if (storedOtp !== otpCode) {
-        throw new Error('Invalid verification code');
-      }
+      // Verify OTP using Supabase's built-in system
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: user.email!,
+        token: otpCode,
+        type: 'email'
+      });
+
+      if (verifyError) throw verifyError;
+
+      const formattedPhone = formatPhoneNumber(formData.phone);
 
       // Update user auth data
       const { error: authError } = await supabase.auth.updateUser({
-        phone: tempPhone,
+        phone: formattedPhone,
         data: {
-          name: formData.name,
-          temp_phone_otp: null, // Clear temporary OTP
-          temp_phone_number: null // Clear temporary phone
+          name: formData.name
         }
       });
 
@@ -172,7 +213,7 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
             .from('passengers')
             .update({ 
               name: formData.name,
-              phone: tempPhone 
+              phone: formattedPhone 
             })
             .eq('phone', originalPhone);
 
@@ -182,7 +223,7 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
           const { error: insertError } = await supabase
             .from('passengers')
             .insert({
-              phone: tempPhone,
+              phone: formattedPhone,
               user_id: user.id,
               name: formData.name,
               email: user.email
@@ -205,7 +246,7 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
             .from('drivers')
             .update({ 
               name: formData.name,
-              phone: tempPhone 
+              phone: formattedPhone 
             })
             .eq('phone', originalPhone);
 
@@ -220,10 +261,11 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
       
       setShowOtpVerification(false);
       setOtpCode('');
-      setOriginalPhone(tempPhone);
-      setFormData(prev => ({ ...prev, phone: tempPhone }));
+      setOriginalPhone(formattedPhone);
+      setFormData(prev => ({ ...prev, phone: formattedPhone }));
       
     } catch (error: any) {
+      console.error('Verification error:', error);
       toast({
         title: "Verification Failed",
         description: error.message || "Invalid verification code. Please try again.",
@@ -327,7 +369,7 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
               </div>
               <CardTitle className="text-white">Enter Verification Code</CardTitle>
               <p className="text-gray-400 text-sm">
-                We've sent a 6-digit code to verify your phone number
+                We've sent a 6-digit code to your email to verify your phone number
               </p>
             </CardHeader>
             
@@ -434,7 +476,7 @@ const EditProfilePage = ({ onBack }: { onBack: () => void }) => {
               {originalPhone ? (
                 <p className="text-xs text-gray-400 mt-1">Phone number is verified and cannot be changed</p>
               ) : (
-                <p className="text-xs text-yellow-400 mt-1">Phone number will require OTP verification</p>
+                <p className="text-xs text-yellow-400 mt-1">Phone number will require email OTP verification</p>
               )}
             </div>
             
