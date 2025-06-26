@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +29,7 @@ const Index = () => {
   const [selectedVehicle, setSelectedVehicle] = useState('mini');
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Ride state
   const [isRideInProgress, setIsRideInProgress] = useState(false);
@@ -55,9 +55,18 @@ const Index = () => {
           email: session.user.email,
           phone: session.user.phone
         });
+        // If user just signed in and we're on initial load, close auth page
+        if (isInitialLoad && currentPage === 'auth') {
+          setCurrentPage(null);
+        }
       } else {
         setUserProfile(null);
+        // Show auth page if no session and it's initial load
+        if (isInitialLoad) {
+          setCurrentPage('auth');
+        }
       }
+      setIsInitialLoad(false);
     });
 
     // Check for existing session
@@ -69,11 +78,15 @@ const Index = () => {
           email: session.user.email,
           phone: session.user.phone
         });
+      } else {
+        // Show auth page by default if no session
+        setCurrentPage('auth');
       }
+      setIsInitialLoad(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isInitialLoad, currentPage]);
 
   const handleSignOut = async () => {
     try {
@@ -82,7 +95,7 @@ const Index = () => {
         title: "Signed Out",
         description: "You have been successfully signed out.",
       });
-      setCurrentPage(null);
+      setCurrentPage('auth'); // Show auth page after logout
       setActiveTab('home');
     } catch (error: any) {
       toast({

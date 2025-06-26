@@ -10,9 +10,9 @@ const NotificationsPage = ({ onBack }: { onBack: () => void }) => {
   const [settings, setSettings] = useState({
     pushNotifications: true,
     rideUpdates: true,
-    promotions: false,
+    promotions: true,
     smsNotifications: true,
-    emailNotifications: false
+    emailNotifications: true
   });
   const { toast } = useToast();
 
