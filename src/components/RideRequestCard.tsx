@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Car, Users, Crown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface RideRequestCardProps {
   pickup: string;
@@ -11,6 +12,8 @@ interface RideRequestCardProps {
 
 const RideRequestCard = ({ pickup, dropoff }: RideRequestCardProps) => {
   const [selectedRideType, setSelectedRideType] = useState('mini');
+  const [isRequesting, setIsRequesting] = useState(false);
+  const { toast } = useToast();
 
   const rideTypes = [
     {
@@ -40,6 +43,40 @@ const RideRequestCard = ({ pickup, dropoff }: RideRequestCardProps) => {
   ];
 
   const canRequest = pickup.trim() && dropoff.trim();
+
+  const handleRideRequest = async () => {
+    if (!canRequest) return;
+
+    setIsRequesting(true);
+    
+    try {
+      // Simulate ride request
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const selectedRide = rideTypes.find(r => r.id === selectedRideType);
+      toast({
+        title: "Ride Requested!",
+        description: `Your ${selectedRide?.name} has been requested. Looking for nearby drivers...`,
+      });
+      
+      console.log('Ride requested:', {
+        pickup,
+        dropoff,
+        rideType: selectedRideType,
+        fare: selectedRide?.price
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Request Failed",
+        description: "Unable to request ride. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Ride request failed:', error);
+    } finally {
+      setIsRequesting(false);
+    }
+  };
 
   return (
     <Card className="bg-gray-800 border-gray-700">
@@ -86,17 +123,23 @@ const RideRequestCard = ({ pickup, dropoff }: RideRequestCardProps) => {
         </div>
 
         <Button 
+          onClick={handleRideRequest}
+          disabled={!canRequest || isRequesting}
           className={`w-full py-3 text-lg font-semibold ${
-            canRequest
+            canRequest && !isRequesting
               ? 'bg-yellow-500 hover:bg-yellow-600 text-black'
               : 'bg-gray-600 text-gray-400 cursor-not-allowed'
           }`}
-          disabled={!canRequest}
         >
-          {canRequest ? 'Request Ride' : 'Enter pickup and destination'}
+          {isRequesting 
+            ? 'Requesting...' 
+            : canRequest 
+              ? 'Request Ride' 
+              : 'Enter pickup and destination'
+          }
         </Button>
 
-        {canRequest && (
+        {canRequest && !isRequesting && (
           <div className="text-center">
             <p className="text-sm text-gray-400">
               Estimated fare: <span className="text-yellow-500 font-medium">
