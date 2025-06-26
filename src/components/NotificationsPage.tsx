@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import AppFooter from '@/components/AppFooter';
 
 const NotificationsPage = ({ onBack }: { onBack: () => void }) => {
   const [settings, setSettings] = useState({
@@ -36,7 +37,16 @@ const NotificationsPage = ({ onBack }: { onBack: () => void }) => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-bold text-white">Notifications</h1>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-xl font-bold text-white">Notifications</h1>
+            <div className="w-6 h-6">
+              <img 
+                src="https://cmsprod.taxiye.com/uploads/taxiye_logo_main_09d8b73c2f.svg" 
+                alt="Taxiye" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
         </div>
 
         <Card className="bg-gray-800 border-gray-700">
@@ -45,6 +55,7 @@ const NotificationsPage = ({ onBack }: { onBack: () => void }) => {
               <Bell className="w-5 h-5 mr-2 text-yellow-500" />
               Notification Settings
             </CardTitle>
+            <p className="text-yellow-500 text-sm font-medium">Always moving!</p>
           </CardHeader>
           
           <CardContent className="space-y-6">
@@ -104,6 +115,8 @@ const NotificationsPage = ({ onBack }: { onBack: () => void }) => {
             </div>
           </CardContent>
         </Card>
+
+        <AppFooter />
       </div>
     </div>
   );

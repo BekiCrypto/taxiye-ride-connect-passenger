@@ -1,12 +1,19 @@
 
 import React from 'react';
-import { User, MapPin, Bell, Phone, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  User, 
+  MapPin, 
+  Bell, 
+  HelpCircle, 
+  LogOut, 
+  Settings,
+  Star,
+  Gift
+} from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
-import ReferralEarnCard from '@/components/referral/ReferralEarnCard';
-import CouponManager from '@/components/referral/CouponManager';
+import AppFooter from '@/components/AppFooter';
 
 interface ProfileContentProps {
   session: Session | null;
@@ -15,102 +22,137 @@ interface ProfileContentProps {
 }
 
 const ProfileContent = ({ session, userProfile, onProfileAction }: ProfileContentProps) => {
+  const profileMenuItems = [
+    { 
+      icon: User, 
+      label: 'Edit Profile', 
+      action: 'edit-profile',
+      available: true 
+    },
+    { 
+      icon: MapPin, 
+      label: 'Saved Addresses', 
+      action: 'saved-addresses',
+      available: true 
+    },
+    { 
+      icon: Bell, 
+      label: 'Notifications', 
+      action: 'notifications',
+      available: true 
+    },
+    { 
+      icon: Gift, 
+      label: 'Referral Program', 
+      action: 'referral',
+      available: true 
+    },
+    { 
+      icon: HelpCircle, 
+      label: 'Help & Support', 
+      action: 'help-support',
+      available: true 
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white mb-6">Profile</h2>
-      
-      {/* Profile Header */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardContent className="p-6 text-center">
-          <div className="w-20 h-20 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <User className="w-10 h-10 text-black" />
+      {/* Profile Header with Logo */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 flex items-center justify-center bg-yellow-500 rounded-full p-2">
+            <img 
+              src="https://cmsprod.taxiye.com/uploads/taxiye_logo_main_09d8b73c2f.svg" 
+              alt="Taxiye" 
+              className="w-full h-full object-contain"
+            />
           </div>
+          <div>
+            <h1 className="text-xl font-bold text-white">Profile</h1>
+            <p className="text-yellow-500 text-sm font-medium">Always moving!</p>
+          </div>
+        </div>
+      </div>
+
+      {/* User Info Card */}
+      <Card className="bg-gray-800 border-gray-700">
+        <CardHeader className="text-center pb-2">
+          <div className="w-20 h-20 bg-gray-700 rounded-full mx-auto flex items-center justify-center mb-4">
+            <User className="w-10 h-10 text-gray-400" />
+          </div>
+          <CardTitle className="text-white">
+            {session ? userProfile?.name || 'User' : 'Guest User'}
+          </CardTitle>
+          <p className="text-gray-400 text-sm">
+            {session ? userProfile?.email || 'No email' : 'Please sign in to access your profile'}
+          </p>
+        </CardHeader>
+        
+        {session && (
+          <CardContent className="text-center pt-0">
+            <div className="flex justify-center items-center space-x-4 text-sm">
+              <div className="flex items-center space-x-1">
+                <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                <span className="text-white">4.9</span>
+              </div>
+              <div className="text-gray-400">•</div>
+              <div className="text-gray-400">Member since 2024</div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Menu Items */}
+      <Card className="bg-gray-800 border-gray-700">
+        <CardContent className="p-0">
+          {profileMenuItems.map((item, index) => {
+            const Icon = item.icon;
+            const isLast = index === profileMenuItems.length - 1;
+            
+            return (
+              <Button
+                key={item.action}
+                variant="ghost"
+                className={`w-full justify-start text-left h-14 px-4 text-white hover:bg-gray-700 rounded-none ${
+                  !isLast ? 'border-b border-gray-700' : ''
+                }`}
+                onClick={() => onProfileAction(item.action)}
+                disabled={!session && item.action !== 'auth'}
+              >
+                <Icon className="w-5 h-5 mr-3 text-gray-400" />
+                <span>{item.label}</span>
+              </Button>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Auth Actions */}
+      <Card className="bg-gray-800 border-gray-700">
+        <CardContent className="p-0">
           {session ? (
-            <>
-              <h3 className="text-xl font-bold text-white">{userProfile?.name || 'User'}</h3>
-              <p className="text-gray-400">{userProfile?.phone || userProfile?.email}</p>
-            </>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-14 px-4 text-red-400 hover:bg-gray-700 hover:text-red-300 rounded-none"
+              onClick={() => onProfileAction('logout')}
+            >
+              <LogOut className="w-5 h-5 mr-3" />
+              <span>Sign Out</span>
+            </Button>
           ) : (
-            <>
-              <h3 className="text-xl font-bold text-white">Welcome</h3>
-              <p className="text-gray-400">Sign in to access your profile</p>
-            </>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-left h-14 px-4 text-yellow-500 hover:bg-gray-700 rounded-none"
+              onClick={() => onProfileAction('auth')}
+            >
+              <User className="w-5 h-5 mr-3" />
+              <span>Sign In / Sign Up</span>
+            </Button>
           )}
         </CardContent>
       </Card>
 
-      {session && (
-        <div className="space-y-3">
-          {/* Referral & Earn Section with Accordion */}
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="referral-earn" className="border-gray-700">
-              <AccordionTrigger className="text-white hover:text-yellow-500 hover:no-underline">
-                <div className="flex items-center space-x-3">
-                  <Gift className="w-5 h-5" />
-                  <span>Refer & Earn</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-4">
-                <ReferralEarnCard />
-                <CouponManager />
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
-      )}
-
-      {/* Profile Options */}
-      <div className="space-y-3">
-        {session ? (
-          <>
-            <Button 
-              onClick={() => onProfileAction('edit-profile')}
-              className="w-full justify-start bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
-            >
-              <User className="w-5 h-5 mr-3" />
-              Edit Profile
-            </Button>
-            
-            <Button 
-              onClick={() => onProfileAction('saved-addresses')}
-              className="w-full justify-start bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
-            >
-              <MapPin className="w-5 h-5 mr-3" />
-              Saved Addresses
-            </Button>
-            
-            <Button 
-              onClick={() => onProfileAction('notifications')}
-              className="w-full justify-start bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
-            >
-              <Bell className="w-5 h-5 mr-3" />
-              Notifications
-            </Button>
-            
-            <Button 
-              onClick={() => onProfileAction('help-support')}
-              className="w-full justify-start bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
-            >
-              <Phone className="w-5 h-5 mr-3" />
-              Help & Support
-            </Button>
-            
-            <Button 
-              onClick={() => onProfileAction('logout')}
-              className="w-full justify-start bg-red-600 hover:bg-red-700 text-white"
-            >
-              Logout
-            </Button>
-          </>
-        ) : (
-          <Button 
-            onClick={() => onProfileAction('auth')}
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
-          >
-            Sign In / Sign Up
-          </Button>
-        )}
-      </div>
+      <AppFooter />
     </div>
   );
 };
