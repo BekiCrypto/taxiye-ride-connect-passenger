@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowLeft, MessageCircle, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ interface ChatBotPageProps {
 
 const ChatBotPage = ({ onBack, platform }: ChatBotPageProps) => {
   const platformName = platform === 'whatsapp' ? 'WhatsApp' : 'Telegram';
-  const platformIcon = MessageCircle;
+  const PlatformIcon = MessageCircle;  // Capitalized to use as component
 
   const chatSessions = [
     {
@@ -92,7 +91,7 @@ const ChatBotPage = ({ onBack, platform }: ChatBotPageProps) => {
               onClick={handleStartNewChat}
               className="w-full mb-4 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
             >
-              <platformIcon className="w-4 h-4 mr-2" />
+              <PlatformIcon className="w-4 h-4 mr-2" />
               Start New Chat on {platformName}
             </Button>
 
