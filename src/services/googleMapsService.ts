@@ -100,11 +100,16 @@ class GoogleMapsService {
   }
 
   async getPlacePredictions(input: string): Promise<PlaceAutocomplete[]> {
-    if (!this.autocompleteService || !input.trim()) {
+    if (!this.autocompleteService || !input.trim() || !window.google) {
       return [];
     }
 
     const predictions: PlaceAutocomplete[] = [];
+
+    // Create LatLng object if we have current location
+    const locationLatLng = this.currentLocation 
+      ? new window.google.maps.LatLng(this.currentLocation.lat, this.currentLocation.lng)
+      : null;
 
     // Multiple search requests for comprehensive results
     const searchRequests = [
@@ -113,24 +118,30 @@ class GoogleMapsService {
         input,
         types: ['establishment'],
         componentRestrictions: { country: 'et' },
-        location: this.currentLocation,
-        radius: 50000 // 50km radius
+        ...(locationLatLng && { 
+          location: locationLatLng,
+          radius: 50000 // 50km radius
+        })
       },
       // Secondary search for geocoding (addresses)
       {
         input,
         types: ['geocode'],
         componentRestrictions: { country: 'et' },
-        location: this.currentLocation,
-        radius: 50000
+        ...(locationLatLng && { 
+          location: locationLatLng,
+          radius: 50000
+        })
       },
       // Tertiary search for regions (broader areas)
       {
         input,
         types: ['(regions)'],
         componentRestrictions: { country: 'et' },
-        location: this.currentLocation,
-        radius: 100000 // 100km radius for regions
+        ...(locationLatLng && { 
+          location: locationLatLng,
+          radius: 100000 // 100km radius for regions
+        })
       }
     ];
 
