@@ -9,6 +9,8 @@ import { useProfileActions } from '@/hooks/useProfileActions';
 import { useRideManagement } from '@/hooks/useRideManagement';
 
 const Index = () => {
+  console.log('Index component mounting...');
+  
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [pickup, setPickup] = useState('');
@@ -21,17 +23,21 @@ const Index = () => {
   const { handleProfileAction } = useProfileActions(setCurrentPage);
 
   useEffect(() => {
+    console.log('Setting up Supabase auth...');
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Session loaded:', session ? 'User logged in' : 'No session');
       setSession(session);
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', session ? 'User logged in' : 'User logged out');
       setSession(session);
     });
   }, []);
 
   useEffect(() => {
     if (session?.user) {
+      console.log('Fetching user profile...');
       fetchUserProfile(session.user.id);
     } else {
       setUserProfile(null);
@@ -49,6 +55,7 @@ const Index = () => {
       if (error) {
         console.error('Error fetching profile:', error);
       } else {
+        console.log('Profile loaded successfully');
         setUserProfile(data);
       }
     } catch (error) {
@@ -64,6 +71,8 @@ const Index = () => {
     ];
     return !pagesWithoutNav.includes(currentPage);
   };
+
+  console.log('Rendering Index with currentPage:', currentPage);
 
   return (
     <SecureErrorBoundary>

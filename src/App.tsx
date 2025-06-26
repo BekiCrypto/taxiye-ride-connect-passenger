@@ -12,11 +12,14 @@ import LoadingScreen from "./components/LoadingScreen";
 const queryClient = new QueryClient();
 
 const App = () => {
+  console.log('App component mounting...');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('App initialization starting...');
     // Simulate app initialization
     const timer = setTimeout(() => {
+      console.log('App initialization complete');
       setIsLoading(false);
     }, 2000);
 
@@ -24,8 +27,11 @@ const App = () => {
   }, []);
 
   if (isLoading) {
+    console.log('Showing loading screen...');
     return <LoadingScreen />;
   }
+
+  console.log('App ready, rendering main interface...');
 
   return (
     <QueryClientProvider client={queryClient}>
