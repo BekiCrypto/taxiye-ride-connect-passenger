@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Phone, Mail, ArrowLeft, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -54,24 +55,25 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
     try {
       if (authType === 'email') {
         if (mode === 'signup') {
+          // Use OTP-based signup instead of email confirmation
           const { error } = await supabase.auth.signUp({
             email: formData.email,
             password: formData.password,
             options: {
-              emailRedirectTo: `${window.location.origin}/`,
               data: {
                 name: formData.name,
                 email: formData.email,
                 user_type: 'passenger' // Default to passenger for regular signups
-              }
+              },
+              emailRedirectTo: undefined // Don't use email redirect, use OTP instead
             }
           });
           
           if (error) throw error;
           
           toast({
-            title: "Check your email",
-            description: "We've sent you a verification link. Please check your email to continue.",
+            title: "Verification Code Sent",
+            description: "We've sent a 6-digit code to your email. Please check your email and enter the code below.",
           });
           setStep('otp');
         } else {
@@ -128,6 +130,7 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
         
         if (error) throw error;
       } else {
+        // Verify email OTP
         const { error } = await supabase.auth.verifyOtp({
           email: formData.email,
           token: formData.otp,
@@ -138,15 +141,51 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
       }
       
       toast({
-        title: "Verification Successful",
-        description: "Welcome to Taxiye!",
+        title: "Account Verified Successfully!",
+        description: "Welcome to Taxiye! You can now use all our services.",
       });
       onBack();
     } catch (error: any) {
       console.error('OTP verification error:', error);
       toast({
         title: "Verification Failed",
-        description: error.message || "Invalid OTP. Please try again.",
+        description: error.message || "Invalid code. Please check the 6-digit code sent to your email and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setLoading(true);
+    try {
+      if (authType === 'email') {
+        // Resend email OTP
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: formData.email
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Code Resent",
+          description: "A new verification code has been sent to your email.",
+        });
+      } else {
+        // Handle phone resend if needed
+        toast({
+          title: "SMS Not Available",
+          description: "Please use email authentication instead.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Resend error:', error);
+      toast({
+        title: "Resend Failed",
+        description: error.message || "Failed to resend code. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -176,7 +215,7 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
             </div>
             <CardTitle className="text-white">Enter Verification Code</CardTitle>
             <p className="text-gray-400 text-sm">
-              We've sent a code to {authType === 'email' ? formData.email : formatPhoneNumber(formData.phone)}
+              We've sent a 6-digit code to {authType === 'email' ? formData.email : formatPhoneNumber(formData.phone)}
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -207,12 +246,16 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
             
             <Button
               variant="ghost"
-              onClick={handleAuthSubmit}
+              onClick={handleResendCode}
               className="w-full text-yellow-500"
               disabled={loading}
             >
               Resend Code
             </Button>
+            
+            <p className="text-xs text-gray-400 text-center">
+              Didn't receive the code? Check your spam folder or click resend.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -318,6 +361,12 @@ const AuthPage = ({ onBack }: { onBack: () => void }) => {
           >
             {loading ? 'Processing...' : mode === 'signin' ? 'Sign In' : 'Sign Up'}
           </Button>
+          
+          {mode === 'signup' && (
+            <p className="text-xs text-gray-400 text-center">
+              After signing up, you'll receive a 6-digit verification code via email to activate your account.
+            </p>
+          )}
           
           <p className="text-xs text-gray-400 text-center">
             Phone authentication will be available once SMS provider is configured in Supabase.
