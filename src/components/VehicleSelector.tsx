@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Car, Users, Crown } from 'lucide-react';
+import { Car, Users, Crown, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface VehicleType {
@@ -56,6 +56,7 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
 }) => {
   const { toast } = useToast();
   const [isRequesting, setIsRequesting] = React.useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   
   // Estimate distance (placeholder - in real app you'd calculate actual distance)
   const estimatedDistance = pickup && dropoff ? 8.5 : 0; // km
@@ -68,7 +69,7 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     return `ETB ${pricePerKm}/km`;
   };
 
-  const canRequest = pickup.trim() && dropoff.trim();
+  const canRequest = pickup?.trim() && dropoff?.trim();
 
   const handleRideRequest = async () => {
     if (!canRequest) return;
@@ -104,52 +105,95 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
     }
   };
 
+  const selectedRideType = vehicleTypes.find(r => r.id === selectedVehicle);
+
   return (
     <Card className="bg-gray-800 border-gray-700">
       <CardContent className="p-4 space-y-4">
-        <h3 className="text-lg font-semibold text-white">Choose Ride Type</h3>
-        
-        <div className="space-y-3">
-          {vehicleTypes.map((ride) => {
-            const isSelected = selectedVehicle === ride.id;
-            
-            return (
-              <div
-                key={ride.id}
-                onClick={() => onVehicleChange(ride.id)}
-                className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                  isSelected
-                    ? 'border-yellow-500 bg-yellow-500/10'
-                    : 'border-gray-600 bg-gray-700 hover:bg-gray-600'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-full ${
-                      isSelected ? 'bg-yellow-500' : 'bg-gray-600'
-                    }`}>
-                      <div className={`${isSelected ? 'text-black' : 'text-white'}`}>
-                        {ride.icon}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-medium text-white">{ride.name}</p>
-                      <p className="text-sm text-gray-400">{ride.description}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-yellow-500">
-                      {formatPrice(ride.basePrice, ride.pricePerKm)}
-                    </p>
-                    {estimatedDistance > 0 && (
-                      <p className="text-sm text-gray-400">{Math.ceil(estimatedDistance)} min</p>
-                    )}
+        {/* Dropdown Header */}
+        <div 
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          className="flex items-center justify-between cursor-pointer"
+        >
+          <h3 className="text-lg font-semibold text-white">Choose Ride Type</h3>
+          {isDropdownOpen ? (
+            <ChevronUp className="w-5 h-5 text-gray-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-gray-400" />
+          )}
+        </div>
+
+        {/* Selected Vehicle Display */}
+        {!isDropdownOpen && selectedRideType && (
+          <div className="p-4 rounded-lg border border-yellow-500 bg-yellow-500/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-full bg-yellow-500">
+                  <div className="text-black">
+                    {selectedRideType.icon}
                   </div>
                 </div>
+                <div>
+                  <p className="font-medium text-white">{selectedRideType.name}</p>
+                  <p className="text-sm text-gray-400">{selectedRideType.description}</p>
+                </div>
               </div>
-            );
-          })}
-        </div>
+              <div className="text-right">
+                <p className="font-bold text-yellow-500">
+                  {formatPrice(selectedRideType.basePrice, selectedRideType.pricePerKm)}
+                </p>
+                {estimatedDistance > 0 && (
+                  <p className="text-sm text-gray-400">{Math.ceil(estimatedDistance)} min</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Dropdown Options */}
+        {isDropdownOpen && (
+          <div className="space-y-3">
+            {vehicleTypes.map((ride) => {
+              const isSelected = selectedVehicle === ride.id;
+              
+              return (
+                <div
+                  key={ride.id}
+                  onClick={() => onVehicleChange(ride.id)}
+                  className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                    isSelected
+                      ? 'border-yellow-500 bg-yellow-500/10'
+                      : 'border-gray-600 bg-gray-700 hover:bg-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-full ${
+                        isSelected ? 'bg-yellow-500' : 'bg-gray-600'
+                      }`}>
+                        <div className={`${isSelected ? 'text-black' : 'text-white'}`}>
+                          {ride.icon}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">{ride.name}</p>
+                        <p className="text-sm text-gray-400">{ride.description}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-yellow-500">
+                        {formatPrice(ride.basePrice, ride.pricePerKm)}
+                      </p>
+                      {estimatedDistance > 0 && (
+                        <p className="text-sm text-gray-400">{Math.ceil(estimatedDistance)} min</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <Button 
           onClick={handleRideRequest}
@@ -168,14 +212,11 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({
           }
         </Button>
 
-        {canRequest && !isRequesting && (
+        {canRequest && !isRequesting && selectedRideType && (
           <div className="text-center">
             <p className="text-sm text-gray-400">
               Estimated fare: <span className="text-yellow-500 font-medium">
-                {formatPrice(
-                  vehicleTypes.find(r => r.id === selectedVehicle)?.basePrice || 0,
-                  vehicleTypes.find(r => r.id === selectedVehicle)?.pricePerKm || 0
-                )}
+                {formatPrice(selectedRideType.basePrice, selectedRideType.pricePerKm)}
               </span>
             </p>
           </div>
