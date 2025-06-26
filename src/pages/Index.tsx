@@ -15,6 +15,10 @@ import SavedAddressesPage from '@/components/SavedAddressesPage';
 import NotificationsPage from '@/components/NotificationsPage';
 import HelpSupportPage from '@/components/HelpSupportPage';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
+import PaymentSelector from '@/components/payment/PaymentSelector';
+import TelebirrTopUp from '@/components/wallet/TelebirrTopUp';
+import BankTransferTopUp from '@/components/wallet/BankTransferTopUp';
+import CardPaymentTopUp from '@/components/wallet/CardPaymentTopUp';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -158,6 +162,19 @@ const Index = () => {
   if (currentPage === 'help-support') {
     return <HelpSupportPage onBack={() => setCurrentPage(null)} />;
   }
+  if (currentPage === 'payment') {
+    return (
+      <PaymentSelector 
+        onBack={() => setCurrentPage(null)} 
+        amount={120} // Example fare amount
+        rideDetails={{
+          pickup: pickup || "Current Location",
+          dropoff: dropoff || "Destination",
+          vehicleType: selectedVehicle
+        }}
+      />
+    );
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -225,6 +242,16 @@ const Index = () => {
                 onRideStart={handleRideStart}
               />
             )}
+
+            {/* Payment Button - Show after ride completion simulation */}
+            {pickup && dropoff && !isRideInProgress && (
+              <Button
+                onClick={() => setCurrentPage('payment')}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-3"
+              >
+                Test Payment Options
+              </Button>
+            )}
           </div>
         );
       case 'wallet':
@@ -244,20 +271,9 @@ const Index = () => {
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-white">Top-up Options</h3>
               
-              <Button className="w-full justify-start bg-gray-800 hover:bg-gray-700 text-white border-gray-700">
-                <Phone className="w-5 h-5 mr-3" />
-                Telebirr
-              </Button>
-              
-              <Button className="w-full justify-start bg-gray-800 hover:bg-gray-700 text-white border-gray-700">
-                <Wallet className="w-5 h-5 mr-3" />
-                Bank Transfer
-              </Button>
-              
-              <Button className="w-full justify-start bg-gray-800 hover:bg-gray-700 text-white border-gray-700">
-                <Wallet className="w-5 h-5 mr-3" />
-                Card Payment
-              </Button>
+              <TelebirrTopUp />
+              <BankTransferTopUp />
+              <CardPaymentTopUp />
             </div>
 
             {/* Recent Transactions */}
